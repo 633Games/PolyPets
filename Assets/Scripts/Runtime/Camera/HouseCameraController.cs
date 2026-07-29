@@ -9,9 +9,9 @@ namespace PolyPets.Camera
     public sealed class HouseCameraController : MonoBehaviour
     {
         [SerializeField] private UnityEngine.Camera targetCamera;
-        [SerializeField] private Vector3 roomFocusOffset = new(0f, 1.1f, 0f);
-        [SerializeField] private Vector3 viewOffset = new(4.2f, 3.4f, -4.2f);
-        [SerializeField] private float fieldOfView = 32f;
+        [SerializeField] private Vector3 roomFocusOffset = new(0f, 1.05f, 0f);
+        [SerializeField] private Vector3 viewOffset = new(4.0f, 3.15f, -4.0f);
+        [SerializeField] private float fieldOfView = 30f;
         [SerializeField] private bool orthographic;
         [SerializeField] private float orthographicSize = 3.2f;
 

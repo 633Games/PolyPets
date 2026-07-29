@@ -72,13 +72,13 @@ namespace PolyPets.EditorTools
             var houseBuffs = systems.AddComponent<HouseBuffs>();
 
             var livingRoom = BuildRoom(environment, materials, "living_room", "Living Room",
-                accentProp: true, gardenBed: false, kitchenShelf: false);
+                RoomBeautyBuilder.RoomStyle.Living);
             var kitchen = BuildRoom(environment, materials, "kitchen", "Kitchen",
-                accentProp: false, gardenBed: false, kitchenShelf: true);
+                RoomBeautyBuilder.RoomStyle.Kitchen);
             var bedroom = BuildRoom(environment, materials, "bedroom", "Bedroom",
-                accentProp: true, gardenBed: false, kitchenShelf: false);
+                RoomBeautyBuilder.RoomStyle.Bedroom);
             var garden = BuildRoom(environment, materials, "garden", "Garden",
-                accentProp: false, gardenBed: true, kitchenShelf: false);
+                RoomBeautyBuilder.RoomStyle.Garden);
             // Offset inactive rooms so they're not stacked in the hierarchy editor view.
             kitchen.transform.position = new Vector3(20f, 0f, 0f);
             bedroom.transform.position = new Vector3(40f, 0f, 0f);
@@ -97,6 +97,17 @@ namespace PolyPets.EditorTools
             var lights = BuildLighting(lighting);
             var volume = BuildGlobalVolume(lighting, volumeProfile);
             var dayNight = BuildDayNight(systems, lights, mainCamera, volume);
+
+            // Prefer the living-room lamp as the DayNight "hero" lamp reference.
+            var livingLamp = livingRoom.GetComponentInChildren<RoomLamp>(true);
+            if (livingLamp != null && livingLamp.LampLight != null)
+            {
+                var soLamp = new SerializedObject(dayNight);
+                soLamp.FindProperty("lampLight").objectReferenceValue = livingLamp.LampLight;
+                soLamp.ApplyModifiedPropertiesWithoutUndo();
+                if (lights.Lamp != null)
+                    lights.Lamp.enabled = false;
+            }
 
             var economy = systems.AddComponent<EconomyService>();
             var inventory = systems.AddComponent<FoodInventory>();
@@ -156,11 +167,10 @@ namespace PolyPets.EditorTools
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
                 "Starter house scene ready.\n\n" +
-                "• 4 rooms: Living, Kitchen, Bedroom, Garden\n" +
-                "• Clean scrub (dirt shader)\n" +
-                "• Food + Décor shops\n" +
-                "• Idle floor coins (max 10) + ambient loop\n" +
-                "• Pet levels / XP\n" +
+                "• Beautiful 4-room house (living / kitchen / bedroom / garden)\n" +
+                "• Cel shade + warm lamp + day/night grade\n" +
+                "• Clean scrub · food/décor shops · idle coins\n" +
+                "• Pet levels · ambient loop\n" +
                 "• Import Feel before setup for MMF upgrade\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
@@ -384,9 +394,7 @@ namespace PolyPets.EditorTools
             MaterialKit mats,
             string roomId,
             string displayName,
-            bool accentProp,
-            bool gardenBed,
-            bool kitchenShelf)
+            RoomBeautyBuilder.RoomStyle style)
         {
             var roomGo = CreateChild(environmentRoot, $"Room_{displayName.Replace(" ", "")}");
             roomGo.transform.position = Vector3.zero;
@@ -394,103 +402,88 @@ namespace PolyPets.EditorTools
             var room = roomGo.AddComponent<RoomRoot>();
             room.Configure(roomId, displayName);
 
-            Material floorMat = gardenBed ? (mats.Palette != null ? mats.Palette.dirtGarden : mats.Floor) : mats.Floor;
-            Material wallMat = mats.Wall;
+            // Full cozy greybox dress — walls, ceiling, window, furniture, lamp.
+            if (mats.Palette != null)
+                RoomBeautyBuilder.DressRoom(roomGo, mats.Palette, style);
+            else
+                BuildRoomFallbackShell(roomGo, mats);
 
+            var focus = CreateChild(roomGo, "FocusAnchor");
+            focus.transform.localPosition = new Vector3(0f, 0.35f, 0.35f);
+
+            var petAnchor = CreateChild(roomGo, "PetAnchor");
+            petAnchor.transform.localPosition = style switch
+            {
+                RoomBeautyBuilder.RoomStyle.Living => new Vector3(0.35f, 0f, -0.35f),
+                RoomBeautyBuilder.RoomStyle.Kitchen => new Vector3(0.2f, 0f, -0.5f),
+                RoomBeautyBuilder.RoomStyle.Bedroom => new Vector3(0.6f, 0f, -0.6f),
+                RoomBeautyBuilder.RoomStyle.Garden => new Vector3(0f, 0f, 0.15f),
+                _ => new Vector3(0.15f, 0f, -0.2f),
+            };
+            petAnchor.transform.localRotation = Quaternion.Euler(0f, -28f, 0f);
+
+            // Three decoration slots — tucked into negative space per room.
+            Vector3 slotA;
+            Vector3 slotB;
+            Vector3 slotC;
+            switch (style)
+            {
+                case RoomBeautyBuilder.RoomStyle.Kitchen:
+                    slotA = new Vector3(-2.0f, 0f, 0.4f);
+                    slotB = new Vector3(2.0f, 0f, 0.6f);
+                    slotC = new Vector3(-1.2f, 0.95f, 2.0f);
+                    break;
+                case RoomBeautyBuilder.RoomStyle.Bedroom:
+                    slotA = new Vector3(-2.1f, 0f, 0.2f);
+                    slotB = new Vector3(1.6f, 0f, -1.5f);
+                    slotC = new Vector3(0.2f, 0f, -1.6f);
+                    break;
+                case RoomBeautyBuilder.RoomStyle.Garden:
+                    slotA = new Vector3(-0.8f, 0f, 2.2f);
+                    slotB = new Vector3(2.2f, 0f, 2.0f);
+                    slotC = new Vector3(-2.2f, 0f, -0.4f);
+                    break;
+                default:
+                    slotA = new Vector3(-2.15f, 0f, 0.35f);
+                    slotB = new Vector3(2.15f, 0f, 0.5f);
+                    slotC = new Vector3(0.2f, 0f, 2.15f);
+                    break;
+            }
+
+            var slotAGo = CreateChild(roomGo, "DecorSlot_A");
+            slotAGo.transform.localPosition = slotA;
+            var slotBGo = CreateChild(roomGo, "DecorSlot_B");
+            slotBGo.transform.localPosition = slotB;
+            var slotCGo = CreateChild(roomGo, "DecorSlot_C");
+            slotCGo.transform.localPosition = slotC;
+
+            room.SetAnchors(focus.transform, petAnchor.transform,
+                new[] { slotAGo.transform, slotBGo.transform, slotCGo.transform });
+
+            return room;
+        }
+
+        private static void BuildRoomFallbackShell(GameObject roomGo, MaterialKit mats)
+        {
             var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.name = "Floor";
             floor.transform.SetParent(roomGo.transform, false);
             floor.transform.localPosition = new Vector3(0f, -0.05f, 0f);
             floor.transform.localScale = new Vector3(RoomSize.x, 0.1f, RoomSize.z);
-            ApplyMaterial(floor, floorMat);
+            ApplyMaterial(floor, mats.Floor);
 
             CreateWall(roomGo, "Wall_Back", new Vector3(0f, RoomSize.y * 0.5f, RoomSize.z * 0.5f),
-                new Vector3(RoomSize.x, RoomSize.y, 0.12f), wallMat);
+                new Vector3(RoomSize.x, RoomSize.y, 0.12f), mats.Wall);
             CreateWall(roomGo, "Wall_Left", new Vector3(-RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
-                new Vector3(0.12f, RoomSize.y, RoomSize.z), wallMat);
+                new Vector3(0.12f, RoomSize.y, RoomSize.z), mats.Wall);
             CreateWall(roomGo, "Wall_Right", new Vector3(RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
-                new Vector3(0.12f, RoomSize.y, RoomSize.z), wallMat);
-
-            CreateWall(roomGo, "Trim_Back", new Vector3(0f, 0.1f, RoomSize.z * 0.5f - 0.02f),
-                new Vector3(RoomSize.x - 0.2f, 0.2f, 0.08f), mats.Trim);
-
-            if (accentProp)
-            {
-                var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                crate.name = "Prop_Crate";
-                crate.transform.SetParent(roomGo.transform, false);
-                crate.transform.localPosition = new Vector3(-1.6f, 0.35f, 1.2f);
-                crate.transform.localScale = new Vector3(0.9f, 0.7f, 0.7f);
-                crate.transform.localRotation = Quaternion.Euler(0f, 18f, 0f);
-                ApplyMaterial(crate, mats.Prop);
-
-                var lampPole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                lampPole.name = "Prop_LampPole";
-                lampPole.transform.SetParent(roomGo.transform, false);
-                lampPole.transform.localPosition = new Vector3(1.8f, 0.7f, 1.5f);
-                lampPole.transform.localScale = new Vector3(0.08f, 0.7f, 0.08f);
-                ApplyMaterial(lampPole, mats.Trim);
-
-                var lampShade = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                lampShade.name = "Prop_LampShade";
-                lampShade.transform.SetParent(roomGo.transform, false);
-                lampShade.transform.localPosition = new Vector3(1.8f, 1.45f, 1.5f);
-                lampShade.transform.localScale = new Vector3(0.45f, 0.25f, 0.45f);
-                ApplyMaterial(lampShade, mats.Accent);
-            }
-
-            if (kitchenShelf)
-            {
-                var shelf = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                shelf.name = "Prop_Shelf";
-                shelf.transform.SetParent(roomGo.transform, false);
-                shelf.transform.localPosition = new Vector3(0f, 1.4f, 2.7f);
-                shelf.transform.localScale = new Vector3(2.2f, 0.12f, 0.35f);
-                ApplyMaterial(shelf, mats.Prop);
-            }
-
-            if (gardenBed)
-            {
-                var bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                bed.name = "Prop_GardenBed";
-                bed.transform.SetParent(roomGo.transform, false);
-                bed.transform.localPosition = new Vector3(-1.2f, 0.15f, 1.0f);
-                bed.transform.localScale = new Vector3(1.5f, 0.3f, 0.8f);
-                ApplyMaterial(bed, mats.Palette != null ? mats.Palette.dirtGarden : mats.Prop);
-            }
-
-            var rug = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            rug.name = "Prop_Rug";
-            rug.transform.SetParent(roomGo.transform, false);
-            rug.transform.localPosition = new Vector3(0f, 0.01f, -0.3f);
-            rug.transform.localScale = new Vector3(2.2f, 0.02f, 1.4f);
-            ApplyMaterial(rug, mats.Rug != null ? mats.Rug : mats.Trim);
-
-            var focus = CreateChild(roomGo, "FocusAnchor");
-            focus.transform.localPosition = new Vector3(0f, 0.2f, 0.4f);
-
-            var petAnchor = CreateChild(roomGo, "PetAnchor");
-            petAnchor.transform.localPosition = new Vector3(0.15f, 0f, -0.2f);
-            petAnchor.transform.localRotation = Quaternion.Euler(0f, -25f, 0f);
-
-            // Three decoration slots per room.
-            var slotA = CreateChild(roomGo, "DecorSlot_A");
-            slotA.transform.localPosition = new Vector3(-1.8f, 0f, -1.2f);
-            var slotB = CreateChild(roomGo, "DecorSlot_B");
-            slotB.transform.localPosition = new Vector3(1.8f, 0f, -1.0f);
-            var slotC = CreateChild(roomGo, "DecorSlot_C");
-            slotC.transform.localPosition = new Vector3(0f, 0f, 1.6f);
-
-            room.SetAnchors(focus.transform, petAnchor.transform,
-                new[] { slotA.transform, slotB.transform, slotC.transform });
-
-            return room;
+                new Vector3(0.12f, RoomSize.y, RoomSize.z), mats.Wall);
         }
 
         private static RoomRoot BuildLivingRoom(GameObject environmentRoot, MaterialKit mats)
         {
             return BuildRoom(environmentRoot, mats, "living_room", "Living Room",
-                accentProp: true, gardenBed: false, kitchenShelf: false);
+                RoomBeautyBuilder.RoomStyle.Living);
         }
 
         private static void CreateWall(GameObject parent, string name, Vector3 localPos, Vector3 scale, Material mat)
@@ -589,8 +582,8 @@ namespace PolyPets.EditorTools
             var cam = camGo.AddComponent<UnityEngine.Camera>();
             cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.16f, 0.14f, 0.13f);
-            cam.fieldOfView = 32f;
+            cam.backgroundColor = new Color(0.14f, 0.12f, 0.16f);
+            cam.fieldOfView = 30f;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 50f;
             cam.allowMSAA = false;
@@ -602,33 +595,45 @@ namespace PolyPets.EditorTools
         private static LightKit BuildLighting(GameObject lightingRoot)
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.35f, 0.32f, 0.28f);
+            RenderSettings.ambientLight = new Color(0.38f, 0.34f, 0.30f);
             RenderSettings.fog = false;
+            RenderSettings.reflectionIntensity = 0.2f;
 
             var key = CreateChild(lightingRoot, "Sun_KeyLight");
             var keyLight = key.AddComponent<Light>();
             keyLight.type = LightType.Directional;
-            keyLight.color = new Color(1f, 0.92f, 0.82f);
-            keyLight.intensity = 1.05f;
+            keyLight.color = new Color(1f, 0.93f, 0.84f);
+            keyLight.intensity = 1.15f;
             keyLight.shadows = LightShadows.Soft;
-            key.transform.rotation = Quaternion.Euler(35f, -35f, 0f);
+            keyLight.shadowStrength = 0.55f;
+            key.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
 
             var fill = CreateChild(lightingRoot, "FillLight");
             var fillLight = fill.AddComponent<Light>();
             fillLight.type = LightType.Directional;
-            fillLight.color = new Color(0.55f, 0.6f, 0.7f);
-            fillLight.intensity = 0.35f;
+            fillLight.color = new Color(0.52f, 0.58f, 0.72f);
+            fillLight.intensity = 0.42f;
             fillLight.shadows = LightShadows.None;
-            fill.transform.rotation = Quaternion.Euler(15f, 140f, 0f);
+            fill.transform.rotation = Quaternion.Euler(12f, 145f, 0f);
 
+            // Soft bounce from "floor" so cel shade doesn't go fully flat-black in shadows.
+            var bounce = CreateChild(lightingRoot, "BounceLight");
+            var bounceLight = bounce.AddComponent<Light>();
+            bounceLight.type = LightType.Directional;
+            bounceLight.color = new Color(1f, 0.82f, 0.7f);
+            bounceLight.intensity = 0.18f;
+            bounceLight.shadows = LightShadows.None;
+            bounce.transform.rotation = Quaternion.Euler(-55f, 20f, 0f);
+
+            // Fallback lamp — RoomBeautyBuilder also places per-room RoomLamp lights.
             var lamp = CreateChild(lightingRoot, "LampPoint");
             var lampLight = lamp.AddComponent<Light>();
             lampLight.type = LightType.Point;
             lampLight.color = new Color(1f, 0.8f, 0.5f);
-            lampLight.intensity = 1.4f;
+            lampLight.intensity = 0.9f;
             lampLight.range = 4.5f;
             lampLight.shadows = LightShadows.None;
-            lamp.transform.position = new Vector3(1.8f, 1.5f, 1.5f);
+            lamp.transform.position = new Vector3(1.85f, 1.55f, 1.55f);
 
             return new LightKit { Sun = keyLight, Fill = fillLight, Lamp = lampLight };
         }

@@ -20,10 +20,12 @@ Shader props on `PolyPets/CelShade`: `_DirtMap`, `_DirtAmount`, `_ScrubMask`, `_
 ## Rooms (demo)
 | Room | Id | Notes |
 |------|-----|--------|
-| Living Room | `living_room` | Starter, lamp + crate |
-| Kitchen | `kitchen` | Shelf prop |
-| Bedroom | `bedroom` | Cozy lamp variant |
-| Garden | `garden` | Dirt floor accent + garden bed |
+| Living Room | `living_room` | Sofa, coffee table, floor lamp, plant, window |
+| Kitchen | `kitchen` | Counter + sink, shelf jars, fruit bowl |
+| Bedroom | `bedroom` | Bed, nightstand lamp, wardrobe |
+| Garden | `garden` | Open fence, raised beds, pond, lantern |
+
+Bootstrap dresses each room via `RoomBeautyBuilder` (ceiling, trim, window/sky, multi-part props, warm `RoomLamp`). Re-run **First-Time Setup** to regenerate.
 
 Use **◀ Room / Room ▶** to switch. Pet follows the active room.
 

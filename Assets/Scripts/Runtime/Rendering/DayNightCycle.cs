@@ -52,6 +52,8 @@ namespace PolyPets.Rendering
 
         private Phase _phase = Phase.Day;
         private ColorAdjustmentsDriver _colorDriver;
+        private PolyPets.House.RoomLamp[] _roomLamps;
+        private float _roomLampRefreshAt;
 
         public float TimeOfDay01 => timeOfDay;
         public float DayLengthSeconds => dayLengthSeconds;
@@ -132,13 +134,32 @@ namespace PolyPets.Rendering
                     DayFactor(t));
             }
 
+            float lampI = EvaluateOrDefault(lampIntensity, t, 1f);
+            var lampColor = Color.Lerp(
+                new Color(1f, 0.72f, 0.4f),
+                new Color(1f, 0.85f, 0.65f),
+                DayFactor(t));
+
             if (lampLight != null)
             {
-                lampLight.intensity = EvaluateOrDefault(lampIntensity, t, 1f);
-                lampLight.color = Color.Lerp(
-                    new Color(1f, 0.72f, 0.4f),
-                    new Color(1f, 0.85f, 0.65f),
-                    DayFactor(t));
+                lampLight.intensity = lampI;
+                lampLight.color = lampColor;
+            }
+
+            if (_roomLamps == null || Time.unscaledTime >= _roomLampRefreshAt)
+            {
+                _roomLamps = Object.FindObjectsByType<PolyPets.House.RoomLamp>(
+                    FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                _roomLampRefreshAt = Time.unscaledTime + 1.5f;
+            }
+
+            for (int i = 0; i < _roomLamps.Length; i++)
+            {
+                var rl = _roomLamps[i]?.LampLight;
+                if (rl == null || rl == lampLight)
+                    continue;
+                rl.intensity = lampI;
+                rl.color = lampColor;
             }
 
             if (ambientColor != null)

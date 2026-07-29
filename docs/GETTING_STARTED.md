@@ -36,7 +36,7 @@ That single menu:
 1. Ensures **URP** pipeline assets  
 2. Builds the locked **25 materials** in `Assets/Materials/`  
 3. Builds UI sprite pack + volume profile + vendor icons  
-4. Creates the house scene (4 rooms, shops, clean, idle coins, ambient audio, levels)  
+4. Creates the house scene (4 dressed rooms, shops, clean, idle coins, ambient, levels)  
 5. Upgrades Feel tags if the Asset Store pack is imported  
 6. Opens the scene  
 

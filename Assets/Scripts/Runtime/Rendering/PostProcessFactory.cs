@@ -19,32 +19,33 @@ namespace PolyPets.Rendering
             ClearOverrides(profile);
 
             var bloom = profile.Add<Bloom>(true);
-            bloom.threshold.Override(0.85f);
-            bloom.intensity.Override(0.45f);
-            bloom.scatter.Override(0.65f);
-            bloom.tint.Override(new Color(1f, 0.85f, 0.65f));
+            bloom.threshold.Override(0.78f);
+            bloom.intensity.Override(0.62f);
+            bloom.scatter.Override(0.72f);
+            bloom.tint.Override(new Color(1f, 0.88f, 0.7f));
 
             var vignette = profile.Add<Vignette>(true);
-            vignette.intensity.Override(0.28f);
-            vignette.smoothness.Override(0.55f);
-            vignette.color.Override(new Color(0.08f, 0.05f, 0.06f));
+            vignette.intensity.Override(0.34f);
+            vignette.smoothness.Override(0.62f);
+            vignette.color.Override(new Color(0.06f, 0.04f, 0.05f));
 
             var color = profile.Add<ColorAdjustments>(true);
-            color.postExposure.Override(0.4f);
-            color.contrast.Override(18f);
-            color.saturation.Override(12f);
-            color.colorFilter.Override(new Color(1f, 0.97f, 0.94f));
+            color.postExposure.Override(0.48f);
+            color.contrast.Override(22f);
+            color.saturation.Override(16f);
+            color.colorFilter.Override(new Color(1f, 0.96f, 0.92f));
 
             var whiteBalance = profile.Add<WhiteBalance>(true);
-            whiteBalance.temperature.Override(8f);
-            whiteBalance.tint.Override(2f);
+            whiteBalance.temperature.Override(12f);
+            whiteBalance.tint.Override(3f);
 
             var tonemap = profile.Add<Tonemapping>(true);
             tonemap.mode.Override(TonemappingMode.Neutral);
 
             var liftGammaGain = profile.Add<LiftGammaGain>(true);
-            liftGammaGain.gamma.Override(new Vector4(1f, 1f, 1f, -0.02f));
-            liftGammaGain.gain.Override(new Vector4(1f, 1f, 1f, 0.05f));
+            liftGammaGain.lift.Override(new Vector4(1.02f, 1.0f, 0.98f, 0.02f));
+            liftGammaGain.gamma.Override(new Vector4(1f, 0.98f, 0.96f, -0.03f));
+            liftGammaGain.gain.Override(new Vector4(1.02f, 1.0f, 0.96f, 0.06f));
         }
 
         public static VolumeProfile CreateDefaultProfile()

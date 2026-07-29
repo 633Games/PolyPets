@@ -93,7 +93,7 @@ namespace PolyPets.Pets
                         continue;
                     // Skip bowl / shadow-only props under pet that aren't cel body if named FoodBowl/Shadow.
                     var goName = _renderers[i].gameObject.name;
-                    if (goName is "FoodBowl" or "Shadow")
+                    if (goName is "FoodBowl" or "Shadow" or "Shadow_Blob")
                     {
                         instanced[m] = shared[m];
                         continue;

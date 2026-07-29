@@ -154,7 +154,9 @@ namespace PolyPets.Tutorial
 
             // Prefer ceramic bowl mat from palette when feeding visuals are built.
             var bowlMat = materialPalette != null ? materialPalette.bowlCeramic : petSecondary;
-            SpawnedPet = StarterPetFactory.Spawn(species, petName, def, petParent, petPrimary, petSecondary);
+            SpawnedPet = StarterPetFactory.Spawn(
+                species, petName, def, petParent, petPrimary, petSecondary,
+                materialPalette != null ? materialPalette.shadowBlob : null);
             if (SpawnedPet != null && bowlMat != null)
                 SpawnedPet.EnsureFoodBowl(bowlMat);
             if (starterRoom != null)

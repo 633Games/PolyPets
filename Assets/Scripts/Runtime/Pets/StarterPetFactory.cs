@@ -15,7 +15,8 @@ namespace PolyPets.Pets
             PetDefinition definition,
             Transform parent,
             Material primary,
-            Material secondary)
+            Material secondary,
+            Material shadowMat = null)
         {
             var root = new GameObject($"Pet_{species}_{petName}");
             if (parent != null)
@@ -44,6 +45,8 @@ namespace PolyPets.Pets
 
             if (root.GetComponent<PetProgression>() == null)
                 root.AddComponent<PetProgression>();
+
+            AttachShadowBlob(root.transform, shadowMat ?? secondary);
 
             var dirt = root.GetComponent<PetDirtVisual>() ?? root.AddComponent<PetDirtVisual>();
             dirt.BindNeeds(needs);
@@ -107,6 +110,32 @@ namespace PolyPets.Pets
             var cottontail = Cube(root, "Tail", new Vector3(0f, 0.45f, -0.4f), new Vector3(0.18f, 0.18f, 0.18f), secondary);
             root.GetComponent<PetAgent>().SetVisualRoots(head.transform, body.transform);
             _ = cottontail;
+        }
+
+        private static void AttachShadowBlob(Transform root, Material shadowMat)
+        {
+            var shadow = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            shadow.name = "Shadow_Blob";
+            var col = shadow.GetComponent<Collider>();
+            if (col != null)
+            {
+                if (Application.isPlaying)
+                    Object.Destroy(col);
+                else
+                    Object.DestroyImmediate(col);
+            }
+
+            shadow.transform.SetParent(root, false);
+            shadow.transform.localPosition = new Vector3(0f, 0.012f, 0f);
+            shadow.transform.localScale = new Vector3(0.75f, 0.012f, 0.5f);
+
+            var renderer = shadow.GetComponent<MeshRenderer>();
+            if (renderer == null)
+                return;
+
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (shadowMat != null)
+                renderer.sharedMaterial = shadowMat;
         }
 
         private static void Leg(Transform root, string name, Vector3 pos, Material mat)

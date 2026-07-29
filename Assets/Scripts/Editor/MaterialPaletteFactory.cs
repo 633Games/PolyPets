@@ -249,7 +249,27 @@ namespace PolyPets.EditorTools
                 if (mat.HasProperty("_MainTex"))
                     mat.SetTexture("_MainTex", tex);
             }
+
+            // Default tiling so photo albedos read as boards/plaster instead of stretched mud.
+            // Per-object MaterialPropertyBlocks in RoomBeautyBuilder can override.
+            Vector2 tile = DefaultTile(spec.Name);
+            if (mat.HasProperty("_BaseMap"))
+                mat.SetTextureScale("_BaseMap", tile);
+            if (mat.HasProperty("_MainTex"))
+                mat.SetTextureScale("_MainTex", tile);
         }
+
+        private static Vector2 DefaultTile(string matName) => matName switch
+        {
+            "Mat_Floor_WornWood" => new Vector2(3.2f, 3.2f),
+            "Mat_Wall_Peeling" => new Vector2(2.0f, 1.4f),
+            "Mat_Trim_Dark" => new Vector2(1.5f, 1.5f),
+            "Mat_Prop_Dusty" => new Vector2(1.6f, 1.6f),
+            "Mat_Rug_Charcoal" => new Vector2(1.4f, 1.2f),
+            "Mat_Dirt_Garden" => new Vector2(2.5f, 2.5f),
+            "Mat_Metal_Dull" => new Vector2(1.8f, 1.8f),
+            _ => Vector2.one,
+        };
 
         private static Texture2D LoadAlbedo(string assetPath)
         {
