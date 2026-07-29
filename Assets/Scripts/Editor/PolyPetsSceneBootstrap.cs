@@ -4,19 +4,22 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using PolyPets.Camera;
 using PolyPets.Core;
 using PolyPets.Desktop;
 using PolyPets.House;
 using PolyPets.Pets;
+using PolyPets.Rendering;
 using PolyPets.UI;
 
 namespace PolyPets.EditorTools
 {
     /// <summary>
-    /// One-click scaffold for the PolyPets vertical slice:
-    /// systems, rundown living room, box-headed cat, framed camera, desktop HUD.
+    /// One-click scaffold for the PolyPets vertical slice on Unity 6.3 (URP):
+    /// cel-shaded room, box-headed cat, framed camera, post-processing, day/night.
     /// Menu: PolyPets → Bootstrap Starter House Scene
     /// </summary>
     public static class PolyPetsSceneBootstrap
@@ -25,6 +28,7 @@ namespace PolyPets.EditorTools
         private const string ScenePath = "Assets/Scenes/House_LivingRoom.unity";
         private const string PetDefPath = "Assets/ScriptableObjects/Pets/PetDefinition_Cat.asset";
         private const string MaterialsFolder = "Assets/Materials";
+        private const string VolumeProfilePath = PostProcessFactory.DefaultProfilePath;
 
         private static readonly Vector3 RoomSize = new(6f, 3f, 6f);
 
@@ -32,6 +36,7 @@ namespace PolyPets.EditorTools
         public static void BootstrapStarterHouseScene()
         {
             EnsureFolders();
+            PolyPetsUrpSetup.EnsureUrpPipelineAssets();
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
@@ -41,8 +46,8 @@ namespace PolyPets.EditorTools
 
             var materials = CreateOrLoadMaterials();
             var catDef = CreateOrLoadCatDefinition(materials.CatPrimary);
+            var volumeProfile = CreateOrLoadVolumeProfile();
 
-            // Hierarchy roots
             var systems = CreateRoot("=== SYSTEMS ===");
             var environment = CreateRoot("=== ENVIRONMENT ===");
             var characters = CreateRoot("=== CHARACTERS ===");
@@ -61,21 +66,24 @@ namespace PolyPets.EditorTools
 
             var mainCamera = BuildCamera(cameras);
             var houseCam = mainCamera.gameObject.AddComponent<HouseCameraController>();
+            PostProcessFactory.EnableCameraPostProcessing(mainCamera, hdr: true);
 
-            BuildLighting(lighting);
+            var lights = BuildLighting(lighting);
+            var volume = BuildGlobalVolume(lighting, volumeProfile);
+            var dayNight = BuildDayNight(systems, lights, mainCamera, volume);
 
             var desktop = systems.AddComponent<DesktopWindowController>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
-            BuildHud(ui, livingRoom.DisplayName);
+            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight);
 
-            // Wire serialized refs via SerializedObject so private fields stick in the scene.
-            WireBootstrap(bootstrap, house, houseCam, desktop);
+            WireBootstrap(bootstrap, house, houseCam, desktop, dayNight);
             WireHouseCamera(houseCam, mainCamera);
             WireHouseController(house, livingRoom);
 
             houseCam.ApplyLens();
             houseCam.FocusRoom(livingRoom);
+            dayNight.Apply(dayNight.TimeOfDay01);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Directory.CreateDirectory("Assets/Scenes");
@@ -85,18 +93,17 @@ namespace PolyPets.EditorTools
             EditorGUIUtility.PingObject(cat.gameObject);
 
             Debug.Log(
-                "[PolyPets] Starter house scene ready.\n" +
+                "[PolyPets] Starter house scene ready (Unity 6.3 / URP cel + day-night).\n" +
                 $"Saved to {ScenePath}\n" +
-                "Hierarchy: SYSTEMS / ENVIRONMENT / CHARACTERS / LIGHTING / CAMERAS / UI\n" +
-                "Next: open Build Settings, add this scene, set Game view to 480x720.");
+                $"Volume profile: {VolumeProfilePath}");
 
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
-                "Starter house scene created.\n\n" +
-                "• Rundown living room (greybox)\n" +
-                "• Box-headed cat at pet anchor\n" +
-                "• 3/4 house camera framed on the room\n" +
-                "• Desktop HUD + window controller stub\n\n" +
+                "Starter house scene created for Unity 6.3.\n\n" +
+                "• Cel-shaded greybox room + cat\n" +
+                "• URP post-processing (bloom / vignette / grade)\n" +
+                "• Day/night cycle driving sun, lamp, ambient\n" +
+                "• 3/4 house camera + desktop HUD clock\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -137,25 +144,44 @@ namespace PolyPets.EditorTools
             EditorUtility.SetDirty(houseCam);
         }
 
-        private static T FindFirst<T>() where T : Object
+        [MenuItem(RootMenu + "Rebuild Volume Profile", priority = 21)]
+        public static void RebuildVolumeProfile()
         {
-#if UNITY_2023_1_OR_NEWER
-            return Object.FindFirstObjectByType<T>();
-#else
-            return Object.FindObjectOfType<T>();
-#endif
+            EnsureFolders();
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfilePath);
+            if (existing != null)
+            {
+                PostProcessFactory.PopulateProfile(existing);
+                EditorUtility.SetDirty(existing);
+                AssetDatabase.SaveAssets();
+                EditorGUIUtility.PingObject(existing);
+                Debug.Log($"[PolyPets] Rebuilt overrides on {VolumeProfilePath}");
+                return;
+            }
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            profile.name = "PolyPets_VolumeProfile";
+            AssetDatabase.CreateAsset(profile, VolumeProfilePath);
+            PostProcessFactory.PopulateProfile(profile);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            EditorGUIUtility.PingObject(profile);
+            Debug.Log($"[PolyPets] Created volume profile at {VolumeProfilePath}");
         }
 
-        // ---------------------------------------------------------------------
-        // Builders
-        // ---------------------------------------------------------------------
+        private static T FindFirst<T>() where T : Object
+        {
+            return Object.FindFirstObjectByType<T>();
+        }
 
         private static void EnsureFolders()
         {
             CreateFolder("Assets", "Scenes");
             CreateFolder("Assets", "Materials");
+            CreateFolder("Assets", "Shaders");
             CreateFolder("Assets", "ScriptableObjects");
             CreateFolder("Assets/ScriptableObjects", "Pets");
+            CreateFolder("Assets/ScriptableObjects", "Rendering");
             CreateFolder("Assets", "Prefabs");
             CreateFolder("Assets/Prefabs", "Pets");
             CreateFolder("Assets/Prefabs", "Rooms");
@@ -182,48 +208,83 @@ namespace PolyPets.EditorTools
             public Material Accent;
         }
 
+        private struct LightKit
+        {
+            public Light Sun;
+            public Light Fill;
+            public Light Lamp;
+        }
+
         private static MaterialKit CreateOrLoadMaterials()
         {
             return new MaterialKit
             {
-                Floor = GetOrCreateColorMaterial("Mat_Floor_WornWood", new Color(0.45f, 0.32f, 0.22f)),
-                Wall = GetOrCreateColorMaterial("Mat_Wall_Peeling", new Color(0.62f, 0.58f, 0.5f)),
-                Trim = GetOrCreateColorMaterial("Mat_Trim_Dark", new Color(0.25f, 0.22f, 0.2f)),
-                Prop = GetOrCreateColorMaterial("Mat_Prop_Dusty", new Color(0.4f, 0.38f, 0.36f)),
-                CatPrimary = GetOrCreateColorMaterial("Mat_Cat_Orange", new Color(0.86f, 0.55f, 0.28f)),
-                CatSecondary = GetOrCreateColorMaterial("Mat_Cat_Dark", new Color(0.18f, 0.15f, 0.13f)),
-                Accent = GetOrCreateColorMaterial("Mat_Accent_Lamp", new Color(0.95f, 0.78f, 0.45f)),
+                Floor = GetOrCreateCelMaterial("Mat_Floor_WornWood", new Color(0.45f, 0.32f, 0.22f), new Color(0.28f, 0.18f, 0.14f), outline: 0.008f),
+                Wall = GetOrCreateCelMaterial("Mat_Wall_Peeling", new Color(0.62f, 0.58f, 0.5f), new Color(0.4f, 0.36f, 0.34f), outline: 0.006f),
+                Trim = GetOrCreateCelMaterial("Mat_Trim_Dark", new Color(0.25f, 0.22f, 0.2f), new Color(0.12f, 0.1f, 0.1f), outline: 0.01f),
+                Prop = GetOrCreateCelMaterial("Mat_Prop_Dusty", new Color(0.4f, 0.38f, 0.36f), new Color(0.22f, 0.2f, 0.2f), outline: 0.01f),
+                CatPrimary = GetOrCreateCelMaterial("Mat_Cat_Orange", new Color(0.86f, 0.55f, 0.28f), new Color(0.45f, 0.25f, 0.16f), outline: 0.014f),
+                CatSecondary = GetOrCreateCelMaterial("Mat_Cat_Dark", new Color(0.18f, 0.15f, 0.13f), new Color(0.08f, 0.06f, 0.06f), outline: 0.012f),
+                Accent = GetOrCreateCelMaterial("Mat_Accent_Lamp", new Color(0.95f, 0.78f, 0.45f), new Color(0.55f, 0.35f, 0.2f), outline: 0.01f),
             };
         }
 
-        private static Material GetOrCreateColorMaterial(string name, Color color)
+        private static Material GetOrCreateCelMaterial(string name, Color color, Color shade, float outline)
         {
             var path = $"{MaterialsFolder}/{name}.mat";
+            var shader = Shader.Find("PolyPets/CelShade")
+                         ?? Shader.Find("Universal Render Pipeline/Lit")
+                         ?? Shader.Find("Standard");
+
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing != null)
             {
-                if (existing.HasProperty("_BaseColor"))
-                    existing.SetColor("_BaseColor", color);
-                if (existing.HasProperty("_Color"))
-                    existing.color = color;
+                if (existing.shader != shader && shader != null)
+                    existing.shader = shader;
+                ApplyCelProperties(existing, color, shade, outline);
                 EditorUtility.SetDirty(existing);
                 return existing;
             }
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit")
-                         ?? Shader.Find("HDRP/Lit")
-                         ?? Shader.Find("Standard")
-                         ?? Shader.Find("Unlit/Color")
-                         ?? Shader.Find("Sprites/Default");
-
             var mat = new Material(shader) { name = name };
+            ApplyCelProperties(mat, color, shade, outline);
+            AssetDatabase.CreateAsset(mat, path);
+            return mat;
+        }
+
+        private static void ApplyCelProperties(Material mat, Color color, Color shade, float outline)
+        {
             if (mat.HasProperty("_BaseColor"))
                 mat.SetColor("_BaseColor", color);
             if (mat.HasProperty("_Color"))
                 mat.color = color;
+            if (mat.HasProperty("_ShadeColor"))
+                mat.SetColor("_ShadeColor", shade);
+            if (mat.HasProperty("_ShadeThreshold"))
+                mat.SetFloat("_ShadeThreshold", 0.45f);
+            if (mat.HasProperty("_ShadeSoftness"))
+                mat.SetFloat("_ShadeSoftness", 0.05f);
+            if (mat.HasProperty("_OutlineWidth"))
+                mat.SetFloat("_OutlineWidth", outline);
+            if (mat.HasProperty("_OutlineColor"))
+                mat.SetColor("_OutlineColor", new Color(0.08f, 0.06f, 0.07f, 1f));
+            if (mat.HasProperty("_RimStrength"))
+                mat.SetFloat("_RimStrength", 0.22f);
+        }
 
-            AssetDatabase.CreateAsset(mat, path);
-            return mat;
+        private static VolumeProfile CreateOrLoadVolumeProfile()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfilePath);
+            if (existing != null)
+                return existing;
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            profile.name = "PolyPets_VolumeProfile";
+            AssetDatabase.CreateAsset(profile, VolumeProfilePath);
+            PostProcessFactory.PopulateProfile(profile);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
         }
 
         private static PetDefinition CreateOrLoadCatDefinition(Material primary)
@@ -238,8 +299,8 @@ namespace PolyPets.EditorTools
             def.personality = "Curious, lazy";
             def.signatureMinigame = "Fishing";
             def.baseCoinsPerSecond = 1.25f;
-            def.primaryColor = primary != null && primary.HasProperty("_Color")
-                ? primary.color
+            def.primaryColor = primary != null && primary.HasProperty("_BaseColor")
+                ? primary.GetColor("_BaseColor")
                 : new Color(0.86f, 0.55f, 0.28f);
             def.secondaryColor = new Color(0.18f, 0.15f, 0.13f);
 
@@ -270,7 +331,6 @@ namespace PolyPets.EditorTools
             var room = roomGo.AddComponent<RoomRoot>();
             room.Configure("living_room", "Living Room");
 
-            // Floor
             var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.name = "Floor";
             floor.transform.SetParent(roomGo.transform, false);
@@ -278,7 +338,6 @@ namespace PolyPets.EditorTools
             floor.transform.localScale = new Vector3(RoomSize.x, 0.1f, RoomSize.z);
             ApplyMaterial(floor, mats.Floor);
 
-            // Walls: back + left + right (open front toward camera)
             CreateWall(roomGo, "Wall_Back", new Vector3(0f, RoomSize.y * 0.5f, RoomSize.z * 0.5f),
                 new Vector3(RoomSize.x, RoomSize.y, 0.12f), mats.Wall);
             CreateWall(roomGo, "Wall_Left", new Vector3(-RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
@@ -286,11 +345,9 @@ namespace PolyPets.EditorTools
             CreateWall(roomGo, "Wall_Right", new Vector3(RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
                 new Vector3(0.12f, RoomSize.y, RoomSize.z), mats.Wall);
 
-            // Baseboard trim
             CreateWall(roomGo, "Trim_Back", new Vector3(0f, 0.1f, RoomSize.z * 0.5f - 0.02f),
                 new Vector3(RoomSize.x - 0.2f, 0.2f, 0.08f), mats.Trim);
 
-            // Rundown props
             var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             crate.name = "Prop_Crate";
             crate.transform.SetParent(roomGo.transform, false);
@@ -320,7 +377,6 @@ namespace PolyPets.EditorTools
             rug.transform.localScale = new Vector3(2.2f, 0.02f, 1.4f);
             ApplyMaterial(rug, mats.Trim);
 
-            // Anchors
             var focus = CreateChild(roomGo, "FocusAnchor");
             focus.transform.localPosition = new Vector3(0f, 0.2f, 0.4f);
 
@@ -361,7 +417,6 @@ namespace PolyPets.EditorTools
             var agent = root.AddComponent<PetAgent>();
             agent.BindDefinition(def);
 
-            // Shadow placeholder
             var shadow = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             shadow.name = "Shadow";
             Object.DestroyImmediate(shadow.GetComponent<Collider>());
@@ -370,7 +425,6 @@ namespace PolyPets.EditorTools
             shadow.transform.localScale = new Vector3(0.7f, 0.01f, 0.45f);
             ApplyMaterial(shadow, mats.Trim);
 
-            // Body
             var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "Body";
             body.transform.SetParent(root.transform, false);
@@ -378,7 +432,6 @@ namespace PolyPets.EditorTools
             body.transform.localScale = new Vector3(0.55f, 0.4f, 0.85f);
             ApplyMaterial(body, mats.CatPrimary);
 
-            // Box head
             var head = GameObject.CreatePrimitive(PrimitiveType.Cube);
             head.name = "Head_Box";
             head.transform.SetParent(root.transform, false);
@@ -386,21 +439,15 @@ namespace PolyPets.EditorTools
             head.transform.localScale = new Vector3(0.55f, 0.55f, 0.55f);
             ApplyMaterial(head, mats.CatPrimary);
 
-            // Ears
             CreateCatPart(root, "Ear_L", new Vector3(-0.18f, 1.28f, 0.05f), new Vector3(0.14f, 0.18f, 0.1f), mats.CatSecondary);
             CreateCatPart(root, "Ear_R", new Vector3(0.18f, 1.28f, 0.05f), new Vector3(0.14f, 0.18f, 0.1f), mats.CatSecondary);
-
-            // Eyes (simple dark cubes)
             CreateCatPart(root, "Eye_L", new Vector3(-0.12f, 0.98f, 0.4f), new Vector3(0.1f, 0.12f, 0.06f), mats.CatSecondary);
             CreateCatPart(root, "Eye_R", new Vector3(0.12f, 0.98f, 0.4f), new Vector3(0.1f, 0.12f, 0.06f), mats.CatSecondary);
-
-            // Legs
             CreateCatPart(root, "Leg_FL", new Vector3(-0.16f, 0.16f, 0.25f), new Vector3(0.12f, 0.32f, 0.12f), mats.CatSecondary);
             CreateCatPart(root, "Leg_FR", new Vector3(0.16f, 0.16f, 0.25f), new Vector3(0.12f, 0.32f, 0.12f), mats.CatSecondary);
             CreateCatPart(root, "Leg_BL", new Vector3(-0.16f, 0.16f, -0.28f), new Vector3(0.12f, 0.32f, 0.12f), mats.CatSecondary);
             CreateCatPart(root, "Leg_BR", new Vector3(0.16f, 0.16f, -0.28f), new Vector3(0.12f, 0.32f, 0.12f), mats.CatSecondary);
 
-            // Tail
             var tail = GameObject.CreatePrimitive(PrimitiveType.Cube);
             tail.name = "Tail";
             tail.transform.SetParent(root.transform, false);
@@ -418,7 +465,6 @@ namespace PolyPets.EditorTools
             so.FindProperty("body").objectReferenceValue = body.transform;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            // Save a prefab for later reuse / adoption flow
             Directory.CreateDirectory("Assets/Prefabs/Pets");
             PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/Pets/Pet_Cat_Mochi.prefab");
 
@@ -447,21 +493,18 @@ namespace PolyPets.EditorTools
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 50f;
             cam.allowMSAA = false;
-            cam.allowHDR = false;
-
-            // Audio listener for completeness
+            cam.allowHDR = true;
             camGo.AddComponent<AudioListener>();
-
             return cam;
         }
 
-        private static void BuildLighting(GameObject lightingRoot)
+        private static LightKit BuildLighting(GameObject lightingRoot)
         {
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.35f, 0.32f, 0.28f);
             RenderSettings.fog = false;
 
-            var key = CreateChild(lightingRoot, "KeyLight");
+            var key = CreateChild(lightingRoot, "Sun_KeyLight");
             var keyLight = key.AddComponent<Light>();
             keyLight.type = LightType.Directional;
             keyLight.color = new Color(1f, 0.92f, 0.82f);
@@ -485,9 +528,41 @@ namespace PolyPets.EditorTools
             lampLight.range = 4.5f;
             lampLight.shadows = LightShadows.None;
             lamp.transform.position = new Vector3(1.8f, 1.5f, 1.5f);
+
+            return new LightKit { Sun = keyLight, Fill = fillLight, Lamp = lampLight };
         }
 
-        private static void BuildHud(GameObject uiRoot, string roomName)
+        private static Volume BuildGlobalVolume(GameObject lightingRoot, VolumeProfile profile)
+        {
+            var go = CreateChild(lightingRoot, "GlobalVolume");
+            var volume = go.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 0f;
+            volume.profile = profile;
+            return volume;
+        }
+
+        private static DayNightCycle BuildDayNight(GameObject systems, LightKit lights, UnityEngine.Camera cam, Volume volume)
+        {
+            var dayNight = systems.AddComponent<DayNightCycle>();
+            var so = new SerializedObject(dayNight);
+            so.FindProperty("sunLight").objectReferenceValue = lights.Sun;
+            so.FindProperty("fillLight").objectReferenceValue = lights.Fill;
+            so.FindProperty("lampLight").objectReferenceValue = lights.Lamp;
+            so.FindProperty("targetCamera").objectReferenceValue = cam;
+            so.FindProperty("globalVolume").objectReferenceValue = volume;
+            so.FindProperty("dayLengthSeconds").floatValue = 480f;
+            so.FindProperty("timeOfDay").floatValue = 0.35f;
+            so.FindProperty("running").boolValue = true;
+            so.FindProperty("editorPreview").boolValue = true;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            // Force default gradients via public API
+            dayNight.SetTimeOfDay(0.35f);
+            return dayNight;
+        }
+
+        private static HudController BuildHud(GameObject uiRoot, string roomName, DayNightCycle dayNight)
         {
             var eventSystem = CreateChild(uiRoot, "EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -506,19 +581,21 @@ namespace PolyPets.EditorTools
 
             var hud = canvasGo.AddComponent<HudController>();
 
-            // Top bar background
             var topBar = CreateUiPanel(canvasGo.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -28f), new Vector2(480f, 56f), new Color(0.08f, 0.07f, 0.06f, 0.85f));
+                new Vector2(0f, -36f), new Vector2(480f, 72f), new Color(0.08f, 0.07f, 0.06f, 0.85f));
 
             var coinLabel = CreateUiText(topBar.transform, "CoinText", "12",
-                new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(70f, 0f), new Vector2(120f, 36f),
+                new Vector2(0f, 0.65f), new Vector2(0f, 0.65f), new Vector2(70f, 0f), new Vector2(120f, 28f),
                 TextAnchor.MiddleLeft, 22);
 
             var roomLabel = CreateUiText(topBar.transform, "RoomText", roomName,
-                new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-90f, 0f), new Vector2(160f, 36f),
+                new Vector2(1f, 0.65f), new Vector2(1f, 0.65f), new Vector2(-90f, 0f), new Vector2(160f, 28f),
                 TextAnchor.MiddleRight, 18);
 
-            // Bottom hint
+            var clockLabel = CreateUiText(topBar.transform, "ClockText", "08:24  Day",
+                new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(220f, 24f),
+                TextAnchor.MiddleCenter, 14);
+
             var bottom = CreateUiPanel(canvasGo.transform, "BottomHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 36f), new Vector2(420f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.7f));
             CreateUiText(bottom.transform, "HintText", "Mochi wants to go fishing…",
@@ -528,10 +605,14 @@ namespace PolyPets.EditorTools
             var so = new SerializedObject(hud);
             so.FindProperty("coinText").objectReferenceValue = coinLabel;
             so.FindProperty("roomText").objectReferenceValue = roomLabel;
+            so.FindProperty("clockText").objectReferenceValue = clockLabel;
+            so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             hud.SetCoins(12);
             hud.SetRoomName(roomName);
+            hud.BindDayNight(dayNight);
+            return hud;
         }
 
         private static GameObject CreateUiPanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
@@ -574,12 +655,13 @@ namespace PolyPets.EditorTools
         }
 
         private static void WireBootstrap(GameBootstrap bootstrap, HouseController house,
-            HouseCameraController houseCam, DesktopWindowController desktop)
+            HouseCameraController houseCam, DesktopWindowController desktop, DayNightCycle dayNight)
         {
             var so = new SerializedObject(bootstrap);
             so.FindProperty("house").objectReferenceValue = house;
             so.FindProperty("houseCamera").objectReferenceValue = houseCam;
             so.FindProperty("desktopWindow").objectReferenceValue = desktop;
+            so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

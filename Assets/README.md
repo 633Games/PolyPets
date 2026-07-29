@@ -2,6 +2,9 @@
 
 Runtime + Editor scripts for the desktop pet house vertical slice.
 
-After opening in Unity (URP), run:
+Open in **Unity 6.3 LTS** (URP), then run:
 
-**PolyPets → Bootstrap Starter House Scene**
+1. **PolyPets → Ensure URP Pipeline Assets**
+2. **PolyPets → Bootstrap Starter House Scene**
+
+You get cel-shaded greybox, post-processing, and a day/night loop.

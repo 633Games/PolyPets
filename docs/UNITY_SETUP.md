@@ -1,82 +1,107 @@
 # PolyPets — Unity Setup
 
-## Recommended project shape
+## Target editor (2026)
 
 | Choice | Recommendation |
 |--------|----------------|
-| Unity | **6000.x** or **2022.3 LTS** |
-| Pipeline | **URP** (3D) |
+| Unity | **Unity 6.3 LTS** (`6000.3.6f1`+) — this is the 2026-era editor (Unity no longer uses “2022/2023” naming) |
+| Pipeline | **URP 17.3** |
 | Platform | Windows Standalone first |
 | Resolution | **480×720** windowed (tall companion) |
-| Quality | Low/Medium, no HDR, MSAA off for the house cam |
+| Look | **Cel shade** + URP Volume post + **day/night** |
 
-This repo ships the `Assets/` scripts and an **Editor bootstrap**. It does **not** ship a full Unity project (`ProjectSettings/`, Library, URP asset). Create a Unity project, then drop these assets in.
+Pinned in-repo:
+
+- `ProjectSettings/ProjectVersion.txt` → `6000.3.6f1`
+- `Packages/manifest.json` → `com.unity.render-pipelines.universal`
+
+Open the project with **Unity Hub → Unity 6.3 LTS**. Hub will resolve packages on first open.
 
 ---
 
 ## First-time setup
 
-1. Create a new Unity project: **3D (URP)**.
-2. Copy this repo’s `Assets/Scripts`, `Assets/Scenes` (after bootstrap), and other `Assets/*` folders into the Unity project’s `Assets/` (or open this repo as the project root after Unity generates `ProjectSettings`).
-3. Wait for script compile.
-4. Menu: **PolyPets → Bootstrap Starter House Scene**.
-5. That creates and saves:
-   - `Assets/Scenes/House_LivingRoom.unity`
-   - `Assets/Prefabs/Pets/Pet_Cat_Mochi.prefab`
-   - `Assets/ScriptableObjects/Pets/PetDefinition_Cat.asset`
-   - Greybox materials under `Assets/Materials/`
-6. **File → Build Settings** → add `House_LivingRoom`.
-7. Game view aspect: fixed **480×720** (or free aspect and resize).
-8. Press Play. You should see the rundown room, box-headed cat, and HUD.
+1. Install **Unity 6.3 LTS** (6000.3.x) via Hub.
+2. Open this repo as a Unity project (or create a URP 3D project and merge `Assets/`, `Packages/`, `ProjectSettings/ProjectVersion.txt`).
+3. Wait for package resolve + script compile.
+4. Menu: **PolyPets → Ensure URP Pipeline Assets** (also runs automatically during bootstrap).
+5. Menu: **PolyPets → Bootstrap Starter House Scene**.
+6. Play `Assets/Scenes/House_LivingRoom.unity` at **480×720**.
 
-### Extra menu actions
+### Menus
 
 | Menu | What it does |
 |------|----------------|
-| `PolyPets/Bootstrap Starter House Scene` | Full scaffold (safe to re-run on a new empty scene flow) |
-| `PolyPets/Select Starter Scene` | Ping the saved scene asset |
-| `PolyPets/Frame Camera On Active Room` | Re-apply cozy 3/4 framing |
+| `PolyPets/Ensure URP Pipeline Assets` | Creates/assigns `PolyPets_URP` + renderer (HDR, extra lights) |
+| `PolyPets/Bootstrap Starter House Scene` | Full scene scaffold |
+| `PolyPets/Rebuild Volume Profile` | Recreates bloom/vignette/grade overrides |
+| `PolyPets/Frame Camera On Active Room` | Re-frame cozy 3/4 camera |
+| `PolyPets/Select Starter Scene` | Ping the saved scene |
+
+---
+
+## Visual stack
+
+### Cel shading
+
+- Shader: `PolyPets/CelShade` (`Assets/Shaders/PolyPetsCelShade.shader`)
+- Stepped lighting, warm shade tint, rim, inverted-hull outline
+- Bootstrap materials under `Assets/Materials/` use this shader
+
+### Post-processing (URP Volume)
+
+Profile: `Assets/Settings/PolyPets_VolumeProfile.asset`
+
+| Override | Intent |
+|----------|--------|
+| Bloom | Soft lamp glow |
+| Vignette | Focus the small window |
+| Color Adjustments | Contrast + exposure (driven by day/night) |
+| White Balance | Warm day / cool night |
+| Tonemapping | Neutral |
+| Lift Gamma Gain | Slight punch for cel shapes |
+
+Camera: HDR on, FXAA, `renderPostProcessing = true`.
+
+### Day / night
+
+`DayNightCycle` on `=== SYSTEMS ===`:
+
+- Loops every **480s** (~8 min) by default — glanceable on a desktop companion
+- Rotates **Sun_KeyLight**, eases **Fill** + **LampPoint**
+- Lerps ambient + camera clear color
+- Drives Volume **post exposure** + **white balance temperature**
+- Phases: Night → Dawn → Day → Dusk (HUD clock shows time + phase)
+
+Scrub `Time Of Day` on the component in Edit Mode (`editorPreview`) to art-direct lighting.
 
 ---
 
 ## What the bootstrap builds
 
 ```
-=== SYSTEMS ===          GameBootstrap, DesktopWindowController
-=== ENVIRONMENT ===      House + Room_LivingRoom (floor/walls/props + anchors)
-=== CHARACTERS ===       Pet_Cat_Mochi (box head + low-poly body primitives)
-=== LIGHTING ===         Key + fill directional, warm lamp point, flat ambient
-=== CAMERAS ===          HouseCamera (FOV 32, dark clear color, HouseCameraController)
-=== UI ===               EventSystem + HUD_Canvas (480×720 reference)
+=== SYSTEMS ===       GameBootstrap, DesktopWindowController, DayNightCycle
+=== ENVIRONMENT ===   House + Room_LivingRoom (cel materials)
+=== CHARACTERS ===    Pet_Cat_Mochi
+=== LIGHTING ===      Sun + Fill + Lamp + GlobalVolume
+=== CAMERAS ===       HouseCamera (HDR + post)
+=== UI ===            HUD with coins / room / clock
 ```
-
-### Room anchors
-
-- `FocusAnchor` — camera look target  
-- `PetAnchor` — where the adopted pet is parented  
-
-### Cat greybox
-
-Cube head, ears, eyes, body, four legs, tilted tail. Swap meshes later; keep `PetAgent` on the root.
 
 ---
 
 ## Desktop companion settings
 
-`DesktopWindowController` applies on Play:
+`DesktopWindowController` on Play:
 
-- Windowed mode  
-- Resolution **480×720** (serialized, tweakable)  
-- Always-on-top **request** via `DesktopNative` (stub until Win32/Cocoa plugin)
+- Windowed **480×720**
+- Always-on-top request via `DesktopNative` stub
 
-### Player Settings (manual for now)
+Player Settings:
 
-- Default Screen Width / Height: `480` × `720`  
-- Fullscreen Mode: **Windowed**  
-- Resizable Window: optional  
-- Run In Background: **On** (idle earn while unfocused)
-
-Always-on-top needs a tiny native helper (not in this pass). The stub logs the intent so gameplay code can call it early.
+- Default Screen Width / Height: `480` × `720`
+- Fullscreen Mode: **Windowed**
+- Run In Background: **On**
 
 ---
 
@@ -84,29 +109,17 @@ Always-on-top needs a tiny native helper (not in this pass). The stub logs the i
 
 | Script | Role |
 |--------|------|
-| `GameBootstrap` | Wires house + camera + desktop on Awake |
-| `HouseController` | Room list / active room |
-| `RoomRoot` | Focus + pet anchors, occupant |
-| `PetAgent` / `PetDefinition` | Instance + data |
-| `HouseCameraController` | 3/4 framing for tall window |
-| `DesktopWindowController` | Window size / always-on-top intent |
-| `HudController` | Coins + room label |
-| `PolyPetsSceneBootstrap` | Editor one-click setup |
+| `DayNightCycle` | Time-of-day lighting + volume grade |
+| `PostProcessFactory` | Volume profile defaults / camera PP enable |
+| `PolyPets/CelShade` | Toon/cel lit + outline |
+| `PolyPetsUrpSetup` | Pipeline asset ensure |
+| `PolyPetsSceneBootstrap` | One-click scene |
 
 ---
 
-## Suggested next editor tools
+## Performance notes
 
-1. **Bootstrap Kitchen Room** — second room + cow greybox + door nav  
-2. **Create Pet Prefab From Selection** — standardize adopted pets  
-3. **Apply Desktop Player Settings** — automate width/height/run-in-background  
-4. Minigame scene templates (Fishing / Graze / Crossy)  
-
----
-
-## Performance notes for a corner window
-
-- One room active at a time (`HouseController` disables others)  
-- House camera: HDR/MSAA off  
-- Prefer simple Lit/Unlit materials; few realtime lights (bootstrap uses 2 directional + 1 point)  
-- Idle economy should tick on a timer, not in `Update` math storms  
+- One active room
+- FXAA instead of MSAA
+- HDR kept **on** for bloom (cheap at 480×720)
+- Day/night updates lights each frame (fine at this scale); curves are cheap

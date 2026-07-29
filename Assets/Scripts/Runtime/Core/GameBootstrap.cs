@@ -2,6 +2,7 @@ using UnityEngine;
 using PolyPets.Desktop;
 using PolyPets.House;
 using PolyPets.Camera;
+using PolyPets.Rendering;
 
 namespace PolyPets.Core
 {
@@ -14,6 +15,7 @@ namespace PolyPets.Core
         [SerializeField] private HouseController house;
         [SerializeField] private HouseCameraController houseCamera;
         [SerializeField] private DesktopWindowController desktopWindow;
+        [SerializeField] private DayNightCycle dayNight;
 
         private void Awake()
         {
@@ -25,6 +27,9 @@ namespace PolyPets.Core
 
             if (houseCamera != null && house != null)
                 houseCamera.FocusRoom(house.ActiveRoom);
+
+            if (dayNight != null)
+                dayNight.Apply(dayNight.TimeOfDay01);
         }
     }
 }

@@ -96,10 +96,12 @@ Keep chrome minimal:
 
 ### Visuals
 
-- **Animals:** Box/cube heads, low-poly bodies, readable colors, simple materials.
-- **House:** Starts worn (cracked walls, junk, dim light). Upgrades replace props and brighten lighting per room.
-- **Style anchor:** Charming toy-like, not grimdark; rundown = cozy neglect, not horror.
-- **No** busy particle spam; coin pops and soft sparkles only on collect/adopt.
+- **Animals:** Box/cube heads, low-poly bodies, readable colors, **cel-shaded** materials with soft outlines.  
+- **House:** Starts worn (cracked walls, junk, dim light). Upgrades replace props and brighten lighting per room.  
+- **Lighting:** Realtime day/night loop (sun + warm lamp); nights lean on the lamp and cooler ambient.  
+- **Post:** Subtle bloom (lamp), vignette, contrasty grade for toy-like readability in a small window.  
+- **Style anchor:** Charming toy-like, not grimdark; rundown = cozy neglect, not horror.  
+- **No** busy particle spam; coin pops and soft sparkles only on collect/adopt.  
 
 ### Audio
 
@@ -347,11 +349,13 @@ Critical neglect → pet naps in a “sulk” state with near-zero idle until fe
 
 ### Project shape
 
-- **URP** 3D, low-poly friendly  
-- Single small render scale; target low GPU use  
+- **Unity 6.3 LTS** (`6000.3.x`, 2026-era editor) — not 2022  
+- **URP 17.3** 3D, low-poly + **cel shade** (`PolyPets/CelShade`)  
+- URP Volume post: bloom, vignette, color grade, white balance, neutral tonemap  
+- **Day/night cycle** drives sun/fill/lamp, ambient, camera clear, and volume exposure/temp  
 - ScriptableObjects for PetDef, RoomDef, MinigameDef, ItemDef  
 - Save: JSON local file (coins, pets, rooms, timers)  
-- **Editor bootstrap:** `PolyPets → Bootstrap Starter House Scene` scaffolds room, cat, camera, lights, HUD (see [`docs/UNITY_SETUP.md`](UNITY_SETUP.md))  
+- **Editor bootstrap:** `PolyPets → Bootstrap Starter House Scene` (see [`docs/UNITY_SETUP.md`](UNITY_SETUP.md))  
 
 ### Desktop features (Windows first)
 
@@ -363,6 +367,7 @@ Critical neglect → pet naps in a “sulk” state with near-zero idle until fe
 
 ```
 GameBootstrap
+ ├─ DayNightCycle (sun / lamp / volume grade)
  ├─ SaveSystem
  ├─ EconomyService (coins, spend, earn ticks)
  ├─ HouseController (rooms, renovations)
@@ -372,7 +377,7 @@ GameBootstrap
  └─ MinigameRouter → Fishing / Graze / Crossy / …
 ```
 
-Bootstrap already places: `GameBootstrap`, `HouseController`, `RoomRoot`, `PetAgent`, `HouseCameraController`, `DesktopWindowController`, `HudController`.
+Bootstrap already places: `GameBootstrap`, `HouseController`, `RoomRoot`, `PetAgent`, `HouseCameraController`, `DesktopWindowController`, `DayNightCycle`, `Volume`, `HudController`.
 
 ### Scene strategy
 
@@ -382,10 +387,10 @@ Bootstrap already places: `GameBootstrap`, `HouseController`, `RoomRoot`, `PetAg
 
 ### Performance budget
 
-- Few dynamic lights; baked-ish look with simple realtime key light  
+- Few dynamic lights; lamp is the hero additional light at night  
 - Cap particle counts  
 - Idle tick on a 0.5–1.0s interval, not per-frame economy math  
-- House camera: HDR/MSAA off for a lightweight corner window  
+- House camera: HDR **on** for bloom, FXAA, no MSAA — cheap at 480×720  
 
 ---
 
