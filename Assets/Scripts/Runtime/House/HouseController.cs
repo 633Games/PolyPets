@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using PolyPets.Pets;
 
 namespace PolyPets.House
 {
@@ -14,6 +15,7 @@ namespace PolyPets.House
                 : null;
 
         public IReadOnlyList<RoomRoot> Rooms => rooms;
+        public int ActiveRoomIndex => activeRoomIndex;
 
         public void Initialize()
         {
@@ -43,6 +45,9 @@ namespace PolyPets.House
             if (rooms == null || rooms.Count == 0)
                 return;
 
+            var previous = ActiveRoom;
+            PetAgent pet = previous != null ? previous.Occupant : null;
+
             activeRoomIndex = Mathf.Clamp(index, 0, rooms.Count - 1);
 
             for (int i = 0; i < rooms.Count; i++)
@@ -50,6 +55,29 @@ namespace PolyPets.House
                 if (rooms[i] != null)
                     rooms[i].gameObject.SetActive(i == activeRoomIndex);
             }
+
+            if (pet != null && ActiveRoom != null && ActiveRoom != previous)
+            {
+                if (previous != null)
+                    previous.ClearOccupantKeepWorld(pet);
+                ActiveRoom.SetOccupant(pet);
+            }
+
+            HouseBuffs.Instance?.Recalculate();
+        }
+
+        public void NextRoom()
+        {
+            if (rooms == null || rooms.Count == 0)
+                return;
+            SetActiveRoom((activeRoomIndex + 1) % rooms.Count);
+        }
+
+        public void PrevRoom()
+        {
+            if (rooms == null || rooms.Count == 0)
+                return;
+            SetActiveRoom((activeRoomIndex - 1 + rooms.Count) % rooms.Count);
         }
     }
 }

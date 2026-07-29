@@ -9,24 +9,32 @@ using PolyPets.Shop;
 namespace PolyPets.UI
 {
     /// <summary>
-    /// Care chrome: Shop opens species food panel; Feed nudges you to click the bowl; Play runs minigame.
+    /// Care chrome: food shop, décor shop, feed, clean scrub, play, room change.
     /// </summary>
     public sealed class CareHudController : MonoBehaviour
     {
         [SerializeField] private EconomyService economy;
         [SerializeField] private FoodInventory inventory;
+        [SerializeField] private DecorationInventory decorationInventory;
         [SerializeField] private MinigameRouter minigames;
         [SerializeField] private HouseController house;
         [SerializeField] private HudController hud;
         [SerializeField] private FoodShopPanel shopPanel;
+        [SerializeField] private DecorationShopPanel decorationShopPanel;
+        [SerializeField] private PetCleanScrubber cleanScrubber;
         [SerializeField] private Text hungerText;
         [SerializeField] private Text happinessText;
+        [SerializeField] private Text cleanText;
         [SerializeField] private Text statusText;
         [SerializeField] private Text foodStockText;
         [SerializeField] private UiChromeButton feedButton;
         [SerializeField] private UiChromeButton shopButton;
+        [SerializeField] private UiChromeButton decorateButton;
+        [SerializeField] private UiChromeButton cleanButton;
         [SerializeField] private UiChromeButton minigameButton;
         [SerializeField] private UiChromeButton playButton;
+        [SerializeField] private UiChromeButton prevRoomButton;
+        [SerializeField] private UiChromeButton nextRoomButton;
 
         private PetAgent ActivePet
         {
@@ -43,6 +51,8 @@ namespace PolyPets.UI
                 economy.CoinsChanged += OnCoinsChanged;
             if (inventory != null)
                 inventory.InventoryChanged += RefreshNeedsUi;
+            if (decorationInventory != null)
+                decorationInventory.InventoryChanged += RefreshNeedsUi;
 
             WireButtons();
             RefreshAll();
@@ -54,6 +64,8 @@ namespace PolyPets.UI
                 economy.CoinsChanged -= OnCoinsChanged;
             if (inventory != null)
                 inventory.InventoryChanged -= RefreshNeedsUi;
+            if (decorationInventory != null)
+                decorationInventory.InventoryChanged -= RefreshNeedsUi;
         }
 
         private void Update()
@@ -77,6 +89,8 @@ namespace PolyPets.UI
             RefreshNeedsUi();
             if (shopPanel != null && shopPanel.IsOpen)
                 shopPanel.Rebuild();
+            if (decorationShopPanel != null && decorationShopPanel.IsOpen)
+                decorationShopPanel.Rebuild();
         }
 
         private void OnFeedClicked()
@@ -84,48 +98,36 @@ namespace PolyPets.UI
             var pet = ActivePet;
             if (pet == null)
             {
-                if (statusText != null)
-                    statusText.text = "Finish the tutorial first!";
+                SetStatus("Finish the tutorial first!");
                 return;
             }
 
-            // Prefer the bowl interaction; button is a convenience shortcut to the same logic.
             var bowl = pet.GetComponentInChildren<PetFoodBowl>(true);
             if (bowl != null)
             {
                 bool ok = bowl.TryFeedFromBowl();
                 if (!ok && pet.Needs != null && pet.Needs.IsFull)
-                {
-                    if (statusText != null)
-                        statusText.text = $"{pet.PetName} is full — wait until hunger drops.";
-                }
+                    SetStatus($"{pet.PetName} is full — wait until hunger drops.");
                 else if (!ok)
-                {
-                    if (statusText != null)
-                        statusText.text = $"No {pet.Definition?.species} food — open Shop.";
-                }
-                else if (statusText != null)
-                {
-                    statusText.text = $"Fed {pet.PetName}!";
-                }
-
+                    SetStatus($"No {pet.Definition?.species} food — open Shop.");
+                else
+                    SetStatus($"Fed {pet.PetName}!");
                 RefreshNeedsUi();
                 return;
             }
 
-            if (statusText != null)
-                statusText.text = "Click the bowl next to your pet to feed.";
+            SetStatus("Click the bowl next to your pet to feed.");
         }
 
         private void OnShopClicked()
         {
             if (ActivePet == null)
             {
-                if (statusText != null)
-                    statusText.text = "Finish the tutorial first!";
+                SetStatus("Finish the tutorial first!");
                 return;
             }
 
+            decorationShopPanel?.Hide();
             if (shopPanel == null)
             {
                 Debug.LogWarning("[PolyPets] Food shop panel missing.");
@@ -135,12 +137,56 @@ namespace PolyPets.UI
             shopPanel.Toggle();
         }
 
+        private void OnDecorateClicked()
+        {
+            if (ActivePet == null)
+            {
+                SetStatus("Finish the tutorial first!");
+                return;
+            }
+
+            shopPanel?.Hide();
+            if (decorationShopPanel == null)
+            {
+                Debug.LogWarning("[PolyPets] Décor shop missing.");
+                return;
+            }
+
+            decorationShopPanel.Toggle();
+        }
+
+        private void OnCleanClicked()
+        {
+            var pet = ActivePet;
+            if (pet == null)
+            {
+                SetStatus("Finish the tutorial first!");
+                return;
+            }
+
+            cleanScrubber ??= PetCleanScrubber.Instance ?? FindFirstObjectByType<PetCleanScrubber>();
+            if (cleanScrubber == null)
+            {
+                SetStatus("Clean system missing.");
+                return;
+            }
+
+            if (cleanScrubber.IsScrubMode)
+            {
+                cleanScrubber.CancelClean();
+                return;
+            }
+
+            shopPanel?.Hide();
+            decorationShopPanel?.Hide();
+            cleanScrubber.BeginClean(pet);
+        }
+
         private void OnMinigameClicked()
         {
             if (ActivePet == null)
             {
-                if (statusText != null)
-                    statusText.text = "Finish the tutorial first!";
+                SetStatus("Finish the tutorial first!");
                 return;
             }
 
@@ -150,14 +196,30 @@ namespace PolyPets.UI
             minigames.SetActivePet(ActivePet);
             minigames.PlayActivePetMinigame();
             var blurb = ActivePet.Definition != null ? ActivePet.Definition.minigameBlurb : "Play!";
-            if (statusText != null)
-                statusText.text = blurb;
+            SetStatus(blurb);
+        }
+
+        private void OnPrevRoom()
+        {
+            house?.PrevRoom();
+            hud?.SetRoomName(house?.ActiveRoom?.DisplayName ?? "Room");
+            decorationShopPanel?.Rebuild();
+            RefreshNeedsUi();
+        }
+
+        private void OnNextRoom()
+        {
+            house?.NextRoom();
+            hud?.SetRoomName(house?.ActiveRoom?.DisplayName ?? "Room");
+            decorationShopPanel?.Rebuild();
+            RefreshNeedsUi();
         }
 
         public void RefreshAll()
         {
             if (economy != null)
                 hud?.SetCoins(economy.Coins);
+            hud?.SetRoomName(house?.ActiveRoom?.DisplayName ?? "Room");
             RefreshNeedsUi();
         }
 
@@ -170,14 +232,27 @@ namespace PolyPets.UI
                 hungerText.text = needs != null ? $"Hunger {needs.Hunger:0}" : "Hunger —";
             if (happinessText != null)
                 happinessText.text = needs != null ? $"Happy {needs.Happiness:0}" : "Happy —";
-            if (statusText != null && needs != null && (shopPanel == null || !shopPanel.IsOpen))
+            if (cleanText != null)
+                cleanText.text = needs != null ? $"Clean {needs.Cleanliness:0}" : "Clean —";
+
+            bool shopOpen = (shopPanel != null && shopPanel.IsOpen)
+                            || (decorationShopPanel != null && decorationShopPanel.IsOpen)
+                            || (cleanScrubber != null && cleanScrubber.IsScrubMode);
+            if (statusText != null && needs != null && !shopOpen)
                 statusText.text = needs.StatusLabel();
 
             if (foodStockText != null && inventory != null)
             {
                 var species = pet?.Definition != null ? pet.Definition.species : PetSpecies.Cat;
-                foodStockText.text = $"{species} food x{inventory.CountForSpecies(species)}";
+                float mult = HouseBuffs.Instance != null ? HouseBuffs.Instance.CoinEarnMultiplier : 1f;
+                foodStockText.text = $"{species} food x{inventory.CountForSpecies(species)} · coins ×{mult:0.00}";
             }
+        }
+
+        private void SetStatus(string msg)
+        {
+            if (statusText != null)
+                statusText.text = msg;
         }
 
         public void Bind(
@@ -186,7 +261,10 @@ namespace PolyPets.UI
             MinigameRouter games,
             HouseController houseController,
             HudController hudController,
-            FoodShopPanel shop)
+            FoodShopPanel shop,
+            DecorationShopPanel decorShop = null,
+            DecorationInventory decorInv = null,
+            PetCleanScrubber scrubber = null)
         {
             economy = eco;
             inventory = inv;
@@ -194,22 +272,40 @@ namespace PolyPets.UI
             house = houseController;
             hud = hudController;
             shopPanel = shop;
+            decorationShopPanel = decorShop;
+            decorationInventory = decorInv;
+            cleanScrubber = scrubber;
+            cleanScrubber?.BindHint(statusText);
         }
 
-        public void BindMeters(Text hunger, Text happiness, Text status, Text foodStock)
+        public void BindMeters(Text hunger, Text happiness, Text status, Text foodStock, Text clean = null)
         {
             hungerText = hunger;
             happinessText = happiness;
             statusText = status;
             foodStockText = foodStock;
+            cleanText = clean;
+            cleanScrubber?.BindHint(statusText);
         }
 
-        public void BindActionButtons(UiChromeButton feed, UiChromeButton shop, UiChromeButton minigame, UiChromeButton play)
+        public void BindActionButtons(
+            UiChromeButton feed,
+            UiChromeButton shop,
+            UiChromeButton minigame,
+            UiChromeButton play,
+            UiChromeButton clean = null,
+            UiChromeButton decorate = null,
+            UiChromeButton prevRoom = null,
+            UiChromeButton nextRoom = null)
         {
             feedButton = feed;
             shopButton = shop;
             minigameButton = minigame;
             playButton = play;
+            cleanButton = clean;
+            decorateButton = decorate;
+            prevRoomButton = prevRoom;
+            nextRoomButton = nextRoom;
             WireButtons();
         }
 
@@ -219,6 +315,10 @@ namespace PolyPets.UI
             BindButton(shopButton, OnShopClicked);
             BindButton(minigameButton, OnMinigameClicked);
             BindButton(playButton, OnMinigameClicked);
+            BindButton(cleanButton, OnCleanClicked);
+            BindButton(decorateButton, OnDecorateClicked);
+            BindButton(prevRoomButton, OnPrevRoom);
+            BindButton(nextRoomButton, OnNextRoom);
         }
     }
 }

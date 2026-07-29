@@ -41,6 +41,16 @@ namespace PolyPets.Pets
 
             FeelTagBinder.WrapChildrenWithFeelContainer(root.transform, FeelTagType.Squash, "Idle");
             agent.EnsureFoodBowl(secondary);
+
+            var dirt = root.GetComponent<PetDirtVisual>() ?? root.AddComponent<PetDirtVisual>();
+            dirt.BindNeeds(needs);
+            dirt.CaptureRenderersFromHierarchy();
+            var dirtMap = Resources.Load<Texture2D>("PolyPets/Tex_Dirt_Mask")
+                          ?? Resources.Load<Texture2D>("PolyPets/Tex_Dirt_Overlay");
+            if (dirtMap != null)
+                dirt.ConfigureDirtMap(dirtMap);
+            dirt.PushShaderState();
+
             return agent;
         }
 

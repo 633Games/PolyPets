@@ -113,7 +113,13 @@ namespace PolyPets.Minigames
         private void OnFinished(MinigameResult result)
         {
             if (result.Completed && result.CoinsEarned > 0)
-                EconomyService.Instance?.AddCoins(result.CoinsEarned, result.MinigameId);
+            {
+                int payout = result.CoinsEarned;
+                var buffs = PolyPets.House.HouseBuffs.Instance;
+                if (buffs != null)
+                    payout = buffs.ApplyCoinBonus(payout);
+                EconomyService.Instance?.AddCoins(payout, result.MinigameId);
+            }
 
             if (result.Completed)
                 activePet?.Needs?.NotifyMinigameCompleted(result.Score01);

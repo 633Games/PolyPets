@@ -57,6 +57,7 @@ namespace PolyPets.EditorTools
             var pets = PetCatalogFactory.EnsureStarterPets();
             var volumeProfile = CreateOrLoadVolumeProfile();
             var foods = FoodCatalogFactory.EnsureDefaultFoods();
+            var decorations = DecorationCatalogFactory.EnsureDefaultDecorations();
 
             var systems = CreateRoot("=== SYSTEMS ===");
             var environment = CreateRoot("=== ENVIRONMENT ===");
@@ -67,12 +68,28 @@ namespace PolyPets.EditorTools
 
             var houseGo = CreateChild(environment, "House");
             var house = houseGo.AddComponent<HouseController>();
+            var houseBuffs = systems.AddComponent<HouseBuffs>();
 
-            var livingRoom = BuildLivingRoom(environment, materials);
+            var livingRoom = BuildRoom(environment, materials, "living_room", "Living Room",
+                accentProp: true, gardenBed: false, kitchenShelf: false);
+            var kitchen = BuildRoom(environment, materials, "kitchen", "Kitchen",
+                accentProp: false, gardenBed: false, kitchenShelf: true);
+            var bedroom = BuildRoom(environment, materials, "bedroom", "Bedroom",
+                accentProp: true, gardenBed: false, kitchenShelf: false);
+            var garden = BuildRoom(environment, materials, "garden", "Garden",
+                accentProp: false, gardenBed: true, kitchenShelf: false);
+            // Offset inactive rooms so they're not stacked in the hierarchy editor view.
+            kitchen.transform.position = new Vector3(20f, 0f, 0f);
+            bedroom.transform.position = new Vector3(40f, 0f, 0f);
+            garden.transform.position = new Vector3(60f, 0f, 0f);
+
             house.RegisterRoom(livingRoom);
-            // Pet is spawned by the tutorial after name + species choice.
+            house.RegisterRoom(kitchen);
+            house.RegisterRoom(bedroom);
+            house.RegisterRoom(garden);
 
             var mainCamera = BuildCamera(cameras);
+            mainCamera.gameObject.AddComponent<UnityEngine.EventSystems.PhysicsRaycaster>();
             var houseCam = mainCamera.gameObject.AddComponent<HouseCameraController>();
             PostProcessFactory.EnableCameraPostProcessing(mainCamera, hdr: true);
 
@@ -84,9 +101,14 @@ namespace PolyPets.EditorTools
             var inventory = systems.AddComponent<FoodInventory>();
             inventory.SetCatalog(foods);
             WireFoodInventory(inventory, foods);
+            var decorInventory = systems.AddComponent<DecorationInventory>();
+            decorInventory.SetCatalog(decorations);
+            WireDecorationInventory(decorInventory, decorations);
+
             var minigames = systems.AddComponent<MinigameRouter>();
             var minigameHud = systems.AddComponent<MinigameHud>();
             minigames.BindHud(minigameHud);
+            var cleanScrubber = systems.AddComponent<PetCleanScrubber>();
 
             var desktop = systems.AddComponent<DesktopWindowController>();
             var tutorial = systems.AddComponent<StarterTutorial>();
@@ -95,17 +117,21 @@ namespace PolyPets.EditorTools
             var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house);
             BuildMinigameOverlay(hud.canvas.transform, minigameHud);
             var shop = BuildFoodShopPanel(hud.canvas.transform, economy, inventory, house);
-            hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop);
+            var decorShop = BuildDecorationShopPanel(hud.canvas.transform, economy, decorInventory, house, palette);
+            hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop, decorShop, decorInventory, cleanScrubber);
             BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials);
 
             WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care, tutorial);
             WireHouseCamera(houseCam, mainCamera);
-            WireHouseController(house, livingRoom);
+            WireHouseController(house, livingRoom, kitchen, bedroom, garden);
+            houseBuffs.BindHouse(house);
             WireEconomy(economy, startingCoins: 0);
+            WireCleanScrubber(cleanScrubber, mainCamera);
 
             houseCam.ApplyLens();
             houseCam.FocusRoom(livingRoom);
             dayNight.Apply(dayNight.TimeOfDay01);
+            house.SetActiveRoom(0);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Directory.CreateDirectory("Assets/Scenes");
@@ -117,15 +143,15 @@ namespace PolyPets.EditorTools
             Debug.Log(
                 "[PolyPets] Starter house scene ready.\n" +
                 $"Saved to {ScenePath}\n" +
-                "Tutorial: welcome → name → pick Cat/Dog/Rabbit → minigame earns coins → buy food.");
+                "Rooms + décor shop + clean scrub + food shop.");
 
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
                 "Starter house scene ready.\n\n" +
-                "• Tutorial: welcome, name, Cat/Dog/Rabbit\n" +
-                "• Minigames earn coins\n" +
-                "• Shop: Budget / Medium / Super per species\n" +
-                "• Click the bowl to feed (full pets wait)\n\n" +
+                "• 4 rooms: Living, Kitchen, Bedroom, Garden\n" +
+                "• Clean scrub (dirt shader)\n" +
+                "• Food + Décor shops\n" +
+                "• Pets never die — only sad/dirty/hungry\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -343,52 +369,85 @@ namespace PolyPets.EditorTools
             return go;
         }
 
-        private static RoomRoot BuildLivingRoom(GameObject environmentRoot, MaterialKit mats)
+        private static RoomRoot BuildRoom(
+            GameObject environmentRoot,
+            MaterialKit mats,
+            string roomId,
+            string displayName,
+            bool accentProp,
+            bool gardenBed,
+            bool kitchenShelf)
         {
-            var roomGo = CreateChild(environmentRoot, "Room_LivingRoom");
+            var roomGo = CreateChild(environmentRoot, $"Room_{displayName.Replace(" ", "")}");
             roomGo.transform.position = Vector3.zero;
 
             var room = roomGo.AddComponent<RoomRoot>();
-            room.Configure("living_room", "Living Room");
+            room.Configure(roomId, displayName);
+
+            Material floorMat = gardenBed ? (mats.Palette != null ? mats.Palette.dirtGarden : mats.Floor) : mats.Floor;
+            Material wallMat = mats.Wall;
 
             var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.name = "Floor";
             floor.transform.SetParent(roomGo.transform, false);
             floor.transform.localPosition = new Vector3(0f, -0.05f, 0f);
             floor.transform.localScale = new Vector3(RoomSize.x, 0.1f, RoomSize.z);
-            ApplyMaterial(floor, mats.Floor);
+            ApplyMaterial(floor, floorMat);
 
             CreateWall(roomGo, "Wall_Back", new Vector3(0f, RoomSize.y * 0.5f, RoomSize.z * 0.5f),
-                new Vector3(RoomSize.x, RoomSize.y, 0.12f), mats.Wall);
+                new Vector3(RoomSize.x, RoomSize.y, 0.12f), wallMat);
             CreateWall(roomGo, "Wall_Left", new Vector3(-RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
-                new Vector3(0.12f, RoomSize.y, RoomSize.z), mats.Wall);
+                new Vector3(0.12f, RoomSize.y, RoomSize.z), wallMat);
             CreateWall(roomGo, "Wall_Right", new Vector3(RoomSize.x * 0.5f, RoomSize.y * 0.5f, 0f),
-                new Vector3(0.12f, RoomSize.y, RoomSize.z), mats.Wall);
+                new Vector3(0.12f, RoomSize.y, RoomSize.z), wallMat);
 
             CreateWall(roomGo, "Trim_Back", new Vector3(0f, 0.1f, RoomSize.z * 0.5f - 0.02f),
                 new Vector3(RoomSize.x - 0.2f, 0.2f, 0.08f), mats.Trim);
 
-            var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            crate.name = "Prop_Crate";
-            crate.transform.SetParent(roomGo.transform, false);
-            crate.transform.localPosition = new Vector3(-1.6f, 0.35f, 1.2f);
-            crate.transform.localScale = new Vector3(0.9f, 0.7f, 0.7f);
-            crate.transform.localRotation = Quaternion.Euler(0f, 18f, 0f);
-            ApplyMaterial(crate, mats.Prop);
+            if (accentProp)
+            {
+                var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                crate.name = "Prop_Crate";
+                crate.transform.SetParent(roomGo.transform, false);
+                crate.transform.localPosition = new Vector3(-1.6f, 0.35f, 1.2f);
+                crate.transform.localScale = new Vector3(0.9f, 0.7f, 0.7f);
+                crate.transform.localRotation = Quaternion.Euler(0f, 18f, 0f);
+                ApplyMaterial(crate, mats.Prop);
 
-            var lampPole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            lampPole.name = "Prop_LampPole";
-            lampPole.transform.SetParent(roomGo.transform, false);
-            lampPole.transform.localPosition = new Vector3(1.8f, 0.7f, 1.5f);
-            lampPole.transform.localScale = new Vector3(0.08f, 0.7f, 0.08f);
-            ApplyMaterial(lampPole, mats.Trim);
+                var lampPole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                lampPole.name = "Prop_LampPole";
+                lampPole.transform.SetParent(roomGo.transform, false);
+                lampPole.transform.localPosition = new Vector3(1.8f, 0.7f, 1.5f);
+                lampPole.transform.localScale = new Vector3(0.08f, 0.7f, 0.08f);
+                ApplyMaterial(lampPole, mats.Trim);
 
-            var lampShade = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            lampShade.name = "Prop_LampShade";
-            lampShade.transform.SetParent(roomGo.transform, false);
-            lampShade.transform.localPosition = new Vector3(1.8f, 1.45f, 1.5f);
-            lampShade.transform.localScale = new Vector3(0.45f, 0.25f, 0.45f);
-            ApplyMaterial(lampShade, mats.Accent);
+                var lampShade = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                lampShade.name = "Prop_LampShade";
+                lampShade.transform.SetParent(roomGo.transform, false);
+                lampShade.transform.localPosition = new Vector3(1.8f, 1.45f, 1.5f);
+                lampShade.transform.localScale = new Vector3(0.45f, 0.25f, 0.45f);
+                ApplyMaterial(lampShade, mats.Accent);
+            }
+
+            if (kitchenShelf)
+            {
+                var shelf = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                shelf.name = "Prop_Shelf";
+                shelf.transform.SetParent(roomGo.transform, false);
+                shelf.transform.localPosition = new Vector3(0f, 1.4f, 2.7f);
+                shelf.transform.localScale = new Vector3(2.2f, 0.12f, 0.35f);
+                ApplyMaterial(shelf, mats.Prop);
+            }
+
+            if (gardenBed)
+            {
+                var bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                bed.name = "Prop_GardenBed";
+                bed.transform.SetParent(roomGo.transform, false);
+                bed.transform.localPosition = new Vector3(-1.2f, 0.15f, 1.0f);
+                bed.transform.localScale = new Vector3(1.5f, 0.3f, 0.8f);
+                ApplyMaterial(bed, mats.Palette != null ? mats.Palette.dirtGarden : mats.Prop);
+            }
 
             var rug = GameObject.CreatePrimitive(PrimitiveType.Cube);
             rug.name = "Prop_Rug";
@@ -404,12 +463,24 @@ namespace PolyPets.EditorTools
             petAnchor.transform.localPosition = new Vector3(0.15f, 0f, -0.2f);
             petAnchor.transform.localRotation = Quaternion.Euler(0f, -25f, 0f);
 
-            var so = new SerializedObject(room);
-            so.FindProperty("focusAnchor").objectReferenceValue = focus.transform;
-            so.FindProperty("petAnchor").objectReferenceValue = petAnchor.transform;
-            so.ApplyModifiedPropertiesWithoutUndo();
+            // Three decoration slots per room.
+            var slotA = CreateChild(roomGo, "DecorSlot_A");
+            slotA.transform.localPosition = new Vector3(-1.8f, 0f, -1.2f);
+            var slotB = CreateChild(roomGo, "DecorSlot_B");
+            slotB.transform.localPosition = new Vector3(1.8f, 0f, -1.0f);
+            var slotC = CreateChild(roomGo, "DecorSlot_C");
+            slotC.transform.localPosition = new Vector3(0f, 0f, 1.6f);
+
+            room.SetAnchors(focus.transform, petAnchor.transform,
+                new[] { slotA.transform, slotB.transform, slotC.transform });
 
             return room;
+        }
+
+        private static RoomRoot BuildLivingRoom(GameObject environmentRoot, MaterialKit mats)
+        {
+            return BuildRoom(environmentRoot, mats, "living_room", "Living Room",
+                accentProp: true, gardenBed: false, kitchenShelf: false);
         }
 
         private static void CreateWall(GameObject parent, string name, Vector3 localPos, Vector3 scale, Material mat)
@@ -635,6 +706,10 @@ namespace PolyPets.EditorTools
             UiChromeButton shopBtn = null;
             UiChromeButton playBtn = null;
             UiChromeButton minigameBtn = null;
+            UiChromeButton cleanBtn = null;
+            UiChromeButton renovateBtn = null;
+            UiChromeButton prevBtn = null;
+            UiChromeButton nextBtn = null;
 
             if (topPrefab != null)
             {
@@ -671,17 +746,20 @@ namespace PolyPets.EditorTools
             var needsBar = CreateUiPanel(canvasGo.transform, "NeedsBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -92f), new Vector2(460f, 44f), new Color(0.08f, 0.07f, 0.06f, 0.8f));
             var hungerLabel = CreateUiText(needsBar.transform, "HungerText", "Hunger 70",
-                new Vector2(0.18f, 0.55f), new Vector2(0.18f, 0.55f), Vector2.zero, new Vector2(120f, 22f),
-                TextAnchor.MiddleLeft, 14);
+                new Vector2(0.12f, 0.55f), new Vector2(0.12f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
+                TextAnchor.MiddleLeft, 13);
             var happyLabel = CreateUiText(needsBar.transform, "HappyText", "Happy 70",
-                new Vector2(0.48f, 0.55f), new Vector2(0.48f, 0.55f), Vector2.zero, new Vector2(120f, 22f),
-                TextAnchor.MiddleLeft, 14);
+                new Vector2(0.36f, 0.55f), new Vector2(0.36f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
+                TextAnchor.MiddleLeft, 13);
+            var cleanLabel = CreateUiText(needsBar.transform, "CleanText", "Clean 80",
+                new Vector2(0.58f, 0.55f), new Vector2(0.58f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
+                TextAnchor.MiddleLeft, 13);
             var foodLabel = CreateUiText(needsBar.transform, "FoodStockText", "Food x0",
-                new Vector2(0.78f, 0.55f), new Vector2(0.78f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
-                TextAnchor.MiddleLeft, 14);
+                new Vector2(0.82f, 0.55f), new Vector2(0.82f, 0.55f), Vector2.zero, new Vector2(110f, 22f),
+                TextAnchor.MiddleLeft, 12);
             var statusLabel = CreateUiText(needsBar.transform, "StatusText", "Okay",
-                new Vector2(0.5f, 0.2f), new Vector2(0.5f, 0.2f), Vector2.zero, new Vector2(400f, 18f),
-                TextAnchor.MiddleCenter, 12);
+                new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(420f, 16f),
+                TextAnchor.MiddleCenter, 11);
 
             if (bottomPrefab != null)
             {
@@ -701,9 +779,25 @@ namespace PolyPets.EditorTools
                         case UiButtonId.Shop: shopBtn = chrome; break;
                         case UiButtonId.Play: playBtn = chrome; break;
                         case UiButtonId.Minigame: minigameBtn = chrome; break;
+                        case UiButtonId.Clean: cleanBtn = chrome; break;
+                        case UiButtonId.Renovate: renovateBtn = chrome; break;
+                        case UiButtonId.PrevRoom: prevBtn = chrome; break;
+                        case UiButtonId.NextRoom: nextBtn = chrome; break;
                     }
                 }
             }
+
+            // Extra care row if chrome prefab lacks Clean / Décor / rooms.
+            var extraBar = CreateUiPanel(canvasGo.transform, "ExtraActions", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(0f, 88f), new Vector2(460f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.75f));
+            if (cleanBtn == null)
+                cleanBtn = CreateChromeProxy(extraBar.transform, "CleanBtn", "Clean", new Vector2(0.12f, 0.5f));
+            if (renovateBtn == null)
+                renovateBtn = CreateChromeProxy(extraBar.transform, "DecorBtn", "Décor", new Vector2(0.34f, 0.5f));
+            if (prevBtn == null)
+                prevBtn = CreateChromeProxy(extraBar.transform, "PrevBtn", "◀ Room", new Vector2(0.62f, 0.5f));
+            if (nextBtn == null)
+                nextBtn = CreateChromeProxy(extraBar.transform, "NextBtn", "Room ▶", new Vector2(0.86f, 0.5f));
 
             if (wantPrefab != null)
             {
@@ -721,8 +815,8 @@ namespace PolyPets.EditorTools
             so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel);
-            care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn);
+            care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel, cleanLabel);
+            care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn, cleanBtn, renovateBtn, prevBtn, nextBtn);
 
             hud.SetCoins(economy != null ? economy.Coins : 0);
             hud.SetRoomName(roomName);
@@ -771,6 +865,55 @@ namespace PolyPets.EditorTools
             var close = CreateSimpleButton(root.transform, "Close", "Close", new Vector2(0.5f, 0.08f), new Vector2(120f, 40f));
             shop.Bind(root, title, body, buttonRoot.transform, close, inventory, economy, house);
             return shop;
+        }
+
+        private static DecorationShopPanel BuildDecorationShopPanel(
+            Transform canvas,
+            EconomyService economy,
+            DecorationInventory inventory,
+            HouseController house,
+            MaterialPalette palette)
+        {
+            var shopGo = new GameObject("DecorationShop", typeof(RectTransform));
+            shopGo.transform.SetParent(canvas, false);
+            var shopRt = shopGo.GetComponent<RectTransform>();
+            shopRt.anchorMin = Vector2.zero;
+            shopRt.anchorMax = Vector2.one;
+            shopRt.offsetMin = Vector2.zero;
+            shopRt.offsetMax = Vector2.zero;
+            var shop = shopGo.AddComponent<DecorationShopPanel>();
+
+            var root = CreateUiPanel(shopGo.transform, "DecorPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(420f, 460f), new Color(0.07f, 0.09f, 0.08f, 0.96f));
+            root.SetActive(false);
+
+            var title = CreateUiText(root.transform, "Title", "Décor Shop",
+                new Vector2(0.5f, 0.93f), new Vector2(0.5f, 0.93f), Vector2.zero, new Vector2(380f, 30f),
+                TextAnchor.MiddleCenter, 20);
+            var body = CreateUiText(root.transform, "Body", "Decorate rooms for happiness + coin bonuses",
+                new Vector2(0.5f, 0.84f), new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(380f, 48f),
+                TextAnchor.UpperCenter, 12);
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var buttonRoot = new GameObject("Rows", typeof(RectTransform));
+            buttonRoot.transform.SetParent(root.transform, false);
+            var brt = buttonRoot.GetComponent<RectTransform>();
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.offsetMin = Vector2.zero;
+            brt.offsetMax = Vector2.zero;
+
+            var close = CreateSimpleButton(root.transform, "Close", "Close", new Vector2(0.5f, 0.07f), new Vector2(120f, 40f));
+            shop.Bind(root, title, body, buttonRoot.transform, close, inventory, economy, house,
+                matName => palette != null ? palette.Get(matName) : null);
+            return shop;
+        }
+
+        private static UiChromeButton CreateChromeProxy(Transform parent, string name, string label, Vector2 anchor)
+        {
+            var btn = CreateSimpleButton(parent, name, label, anchor, new Vector2(90f, 32f));
+            var chrome = btn.gameObject.AddComponent<UiChromeButton>();
+            return chrome;
         }
 
         private static void BuildMinigameOverlay(Transform canvas, MinigameHud hud)
@@ -985,13 +1128,31 @@ namespace PolyPets.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void WireHouseController(HouseController house, RoomRoot livingRoom)
+        private static void WireHouseController(HouseController house, params RoomRoot[] roomList)
         {
             var so = new SerializedObject(house);
             var rooms = so.FindProperty("rooms");
-            rooms.arraySize = 1;
-            rooms.GetArrayElementAtIndex(0).objectReferenceValue = livingRoom;
+            rooms.arraySize = roomList.Length;
+            for (int i = 0; i < roomList.Length; i++)
+                rooms.GetArrayElementAtIndex(i).objectReferenceValue = roomList[i];
             so.FindProperty("activeRoomIndex").intValue = 0;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireDecorationInventory(DecorationInventory inventory, DecorationDefinition[] catalog)
+        {
+            var so = new SerializedObject(inventory);
+            var cat = so.FindProperty("catalog");
+            cat.arraySize = catalog.Length;
+            for (int i = 0; i < catalog.Length; i++)
+                cat.GetArrayElementAtIndex(i).objectReferenceValue = catalog[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireCleanScrubber(PetCleanScrubber scrubber, UnityEngine.Camera cam)
+        {
+            var so = new SerializedObject(scrubber);
+            so.FindProperty("rayCamera").objectReferenceValue = cam;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
     }

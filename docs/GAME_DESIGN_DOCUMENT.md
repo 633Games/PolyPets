@@ -325,7 +325,7 @@ Pets periodically raise a **Want**:
 ### Death / neglect policy
 
 **MVP: no permanent death.**  
-Critical neglect → pet naps in a “sulk” state with near-zero idle until fed/cleaned. Keeps the Tamagotchi tension without punishing desktop users who step away.
+Pets only become hungry, unhappy, and dirty. Clean scrub restores cleanliness; food restores hunger; décor + play restore happiness.
 
 ---
 

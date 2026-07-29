@@ -9,7 +9,9 @@
 5. If **full**, they refuse food until hunger drops
 6. Repeat
 
-Coins are **only** from minigames.
+Coins are **only** from minigames (boosted by room decorations).
+
+Pets **never die** — they only get hungry, sad, and dirty. Use **Clean** to scrub dirt off their material.
 
 ---
 

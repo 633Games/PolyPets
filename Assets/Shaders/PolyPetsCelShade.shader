@@ -14,6 +14,15 @@ Shader "PolyPets/CelShade"
         _RimStrength ("Rim Strength", Range(0, 1)) = 0.25
         _OutlineColor ("Outline Color", Color) = (0.08, 0.06, 0.07, 1)
         _OutlineWidth ("Outline Width", Range(0, 0.05)) = 0.012
+
+        [Header(Dirt Scrub)]
+        _DirtMap ("Dirt Map", 2D) = "gray" {}
+        _DirtColor ("Dirt Color", Color) = (0.22, 0.16, 0.12, 1)
+        _DirtAmount ("Dirt Amount", Range(0, 1)) = 0
+        _DirtStrength ("Dirt Strength", Range(0, 1)) = 0.85
+        _DirtTiling ("Dirt Tiling", Float) = 2.5
+        _ScrubMask ("Scrub Mask (white = cleaned)", 2D) = "black" {}
+        _ScrubGlow ("Scrub Glow", Range(0, 1)) = 0
     }
 
     SubShader
@@ -52,6 +61,12 @@ Shader "PolyPets/CelShade"
                 half _RimStrength;
                 half4 _OutlineColor;
                 half _OutlineWidth;
+                float4 _DirtMap_ST;
+                half4 _DirtColor;
+                half _DirtAmount;
+                half _DirtStrength;
+                half _DirtTiling;
+                half _ScrubGlow;
             CBUFFER_END
 
             struct Attributes
@@ -106,6 +121,10 @@ Shader "PolyPets/CelShade"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_DirtMap);
+            SAMPLER(sampler_DirtMap);
+            TEXTURE2D(_ScrubMask);
+            SAMPLER(sampler_ScrubMask);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -120,6 +139,12 @@ Shader "PolyPets/CelShade"
                 half _RimStrength;
                 half4 _OutlineColor;
                 half _OutlineWidth;
+                float4 _DirtMap_ST;
+                half4 _DirtColor;
+                half _DirtAmount;
+                half _DirtStrength;
+                half _DirtTiling;
+                half _ScrubGlow;
             CBUFFER_END
 
             struct Attributes
@@ -162,6 +187,15 @@ Shader "PolyPets/CelShade"
                 UNITY_SETUP_INSTANCE_ID(input);
 
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+
+                // Dirt overlay — scrub mask (white) clears dirt locally while cleaning.
+                float2 dirtUv = input.uv * _DirtTiling;
+                half dirtSample = SAMPLE_TEXTURE2D(_DirtMap, sampler_DirtMap, dirtUv).r;
+                half scrubbed = SAMPLE_TEXTURE2D(_ScrubMask, sampler_ScrubMask, input.uv).r;
+                half dirtMask = saturate(dirtSample * _DirtAmount * (1.0h - scrubbed));
+                albedo.rgb = lerp(albedo.rgb, albedo.rgb * _DirtColor.rgb, dirtMask * _DirtStrength);
+                albedo.rgb += scrubbed * _ScrubGlow * half3(0.55h, 0.7h, 0.85h);
+
                 float3 normalWS = normalize(input.normalWS);
                 float3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
 
