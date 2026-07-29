@@ -351,13 +351,13 @@ Critical neglect → pet naps in a “sulk” state with near-zero idle until fe
 - Single small render scale; target low GPU use  
 - ScriptableObjects for PetDef, RoomDef, MinigameDef, ItemDef  
 - Save: JSON local file (coins, pets, rooms, timers)  
+- **Editor bootstrap:** `PolyPets → Bootstrap Starter House Scene` scaffolds room, cat, camera, lights, HUD (see [`docs/UNITY_SETUP.md`](UNITY_SETUP.md))  
 
 ### Desktop features (Windows first)
 
-- Borderless / small windowed mode  
-- `Always on top` via Win32 hook or Unity player setting + plugin  
+- Borderless / small windowed mode (**480×720** default)  
+- `Always on top` via Win32 hook or Unity player setting + plugin (`DesktopNative` stub in place)  
 - Remember window position/size  
-- Optional click-through later (advanced)  
 
 ### Systems map
 
@@ -372,16 +372,20 @@ GameBootstrap
  └─ MinigameRouter → Fishing / Graze / Crossy / …
 ```
 
+Bootstrap already places: `GameBootstrap`, `HouseController`, `RoomRoot`, `PetAgent`, `HouseCameraController`, `DesktopWindowController`, `HudController`.
+
 ### Scene strategy
 
 - `Boot` → `House` (additive room content) → `Minigame_*` loaded additive or single active swap  
 - Keep house scene alive under minigames if possible for instant return  
+- Starter scene path: `Assets/Scenes/House_LivingRoom.unity`  
 
 ### Performance budget
 
 - Few dynamic lights; baked-ish look with simple realtime key light  
 - Cap particle counts  
 - Idle tick on a 0.5–1.0s interval, not per-frame economy math  
+- House camera: HDR/MSAA off for a lightweight corner window  
 
 ---
 
