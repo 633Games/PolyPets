@@ -1,0 +1,14 @@
+---
+description: Scene bootstrap and Editor menu tooling
+globs: Assets/Scripts/Editor/**/*.cs
+alwaysApply: false
+---
+
+# Editor bootstrap
+
+- Full scene: `PolyPetsSceneBootstrap.BootstrapStarterHouseScene` (creates new scene)
+- HUD-only: `CozyHudBuilder.ApplyCozyHudToOpenScene` (requires `=== SYSTEMS ===` + `=== UI ===`)
+- Always persist critical refs with `SerializedObject` + `ApplyModifiedPropertiesWithoutUndo` + `SetDirty`
+- Avoid `DisplayDialog` in any `-executeMethod` / batchmode path — use a silent wrapper that saves the scene
+- First-run: `PolyPetsFirstRun` / `★ First-Time Setup`
+- URP: `PolyPetsUrpSetup.EnsureUrpPipelineAssets` before material work

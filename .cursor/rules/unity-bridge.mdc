@@ -1,0 +1,19 @@
+---
+description: Prefer the PolyPets Unity file bridge for live editor inspect/exec. Never dump full scene YAML, screenshots, or Editor.log.
+alwaysApply: true
+---
+# Unity ↔ Cursor bridge (token-efficient)
+
+When inspecting or changing the live Unity editor for PolyPets:
+
+1. **Use the bridge** under `.cursor/unity/` instead of reading `*.unity` YAML, taking screenshots, or slurping `%LOCALAPPDATA%\Unity\Editor\Editor.log`.
+2. Run helpers via PowerShell from the repo root:
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 ping`
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 hierarchy -Depth 2 -Limit 40`
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 find -Name Care -Type CareHudController`
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 get-component -Name CareHud -Type CareHudController`
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 log -Limit 25 -Filter Null`
+   - `powershell -File .cursor/unity/Invoke-Unity.ps1 exec -Menu "PolyPets/UI/Apply Cozy Companion HUD"`
+3. Requires **Unity Editor open** on this project (`CursorUnityBridge` auto-starts). If `status.json` is missing, tell the user to open Unity.
+4. Outputs are capped JSON. Do not request full texture/scene dumps.
+5. Prefer `get-component` to verify serialized refs (e.g. CareHudController buttons) over opening the scene asset.

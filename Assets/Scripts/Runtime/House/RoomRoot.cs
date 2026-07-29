@@ -32,7 +32,8 @@ namespace PolyPets.House
 
             pet.transform.SetParent(PetAnchor, false);
             pet.transform.localPosition = Vector3.zero;
-            pet.transform.localRotation = Quaternion.identity;
+            // Mesh faces +Z; room camera looks from the front, so turn them toward the viewer.
+            pet.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             pet.AssignRoom(this);
         }
     }

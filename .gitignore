@@ -35,3 +35,10 @@ ExportedObj/
 *.aab
 *.unitypackage
 crashlytics-buildid.txt
+
+# Cursor ↔ Unity bridge runtime (status/cmd/out)
+.cursor/unity/cmd.json
+.cursor/unity/out.json
+.cursor/unity/out.json.tmp
+.cursor/unity/status.json
+

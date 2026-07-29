@@ -128,10 +128,13 @@ namespace PolyPets.EditorTools
                 AssetDatabase.CreateAsset(pack, PackPath);
             }
 
-            pack.panelBackground = GetOrCreatePlaceholderSprite("spr_panel", new Color(0.12f, 0.1f, 0.09f, 0.92f), 64, 64);
-            pack.buttonBackground = GetOrCreatePlaceholderSprite("spr_btn", new Color(0.22f, 0.18f, 0.16f, 1f), 64, 64);
-            pack.buttonBackgroundPressed = GetOrCreatePlaceholderSprite("spr_btn_pressed", new Color(0.16f, 0.13f, 0.12f, 1f), 64, 64);
-            pack.buttonBackgroundDisabled = GetOrCreatePlaceholderSprite("spr_btn_disabled", new Color(0.2f, 0.2f, 0.2f, 0.5f), 64, 64);
+            pack.panelBackground = GetOrCreatePlaceholderSprite("spr_panel", new Color(0.97f, 0.94f, 0.88f, 1f), 64, 64);
+            pack.buttonBackground = GetOrCreatePlaceholderSprite("spr_btn", new Color(1f, 0.98f, 0.94f, 1f), 64, 64);
+            pack.buttonBackgroundPressed = GetOrCreatePlaceholderSprite("spr_btn_pressed", new Color(0.94f, 0.88f, 0.78f, 1f), 64, 64);
+            pack.buttonBackgroundDisabled = GetOrCreatePlaceholderSprite("spr_btn_disabled", new Color(0.9f, 0.86f, 0.8f, 0.55f), 64, 64);
+            pack.labelColor = new Color(0.29f, 0.22f, 0.17f, 1f);
+            pack.accentColor = new Color(0.91f, 0.64f, 0.32f, 1f);
+            pack.dangerColor = new Color(0.86f, 0.52f, 0.42f, 1f);
 
             // Ensure entries exist for every button id with a placeholder icon.
             var entries = new UiButtonSpriteEntry[AllButtons.Length];
@@ -254,6 +257,14 @@ namespace PolyPets.EditorTools
             label.raycastTarget = false;
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
                          ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            // Soft companion button shape
+            bg.color = Color.white;
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 0.97f, 0.92f, 1f);
+            colors.pressedColor = new Color(0.94f, 0.88f, 0.78f, 1f);
+            button.colors = colors;
 
             var chrome = root.GetComponent<UiChromeButton>();
             var so = new SerializedObject(chrome);

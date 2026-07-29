@@ -196,20 +196,20 @@ namespace PolyPets.Tutorial
             {
                 case Step.Welcome:
                     SetCopy(
-                        "Welcome to PolyPets",
-                        "A cozy desktop home for box-headed pals.\nEarn coins in minigames, buy food, keep them happy.");
-                    SetNextLabel("Let's go");
+                        "Welcome home",
+                        "A tiny desk window for a box-headed pal.\nPlay a little, earn a few coins, keep them fed and cozy.");
+                    SetNextLabel("Let's settle in");
                     break;
                 case Step.Name:
                     SetCopy(
-                        "Name your Poly Pet",
-                        "What should we call your new friend?");
+                        "Name your friend",
+                        "What should we call them?");
                     SetNextLabel("Next");
                     break;
                 case Step.ChooseSpecies:
                     SetCopy(
-                        $"Pick a pal for {petName}",
-                        "Cat — Fishing (nibbles → bite → reel)\nDog — Dig + Snap (holes fill in)\nRabbit — Carrot Farm (harvest before spoil)\n\nMinigames earn the coins you spend on food.");
+                        $"Who's moving in with {petName}?",
+                        "Cat — fishing by the pond\nDog — dig & snap in the yard\nRabbit — carrot farm\n\nA quick play earns treats money.");
                     break;
             }
         }

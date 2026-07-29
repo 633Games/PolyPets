@@ -20,6 +20,8 @@ namespace PolyPets.Pets
         public PetDefinition Definition => definition;
         public string PetName => petName;
         public RoomRoot CurrentRoom => currentRoom;
+        public Transform Head => head;
+        public Transform Body => body;
         public PetNeeds Needs => needs != null ? needs : needs = GetComponent<PetNeeds>();
 
         private void Awake()
@@ -53,6 +55,11 @@ namespace PolyPets.Pets
         {
             head = headRoot;
             body = bodyRoot;
+
+            var look = GetComponent<PetMouseLook>();
+            if (look == null)
+                look = gameObject.AddComponent<PetMouseLook>();
+            look.Bind(head);
         }
 
         public bool TryFeedFromInventory()

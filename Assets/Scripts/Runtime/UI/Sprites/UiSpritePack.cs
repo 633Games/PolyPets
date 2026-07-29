@@ -47,9 +47,9 @@ namespace PolyPets.UI
         public Sprite buttonBackgroundDisabled;
 
         [Header("Colors")]
-        public Color labelColor = new(0.95f, 0.92f, 0.88f, 1f);
-        public Color accentColor = new(0.92f, 0.62f, 0.28f, 1f);
-        public Color dangerColor = new(0.85f, 0.32f, 0.28f, 1f);
+        public Color labelColor = new(0.29f, 0.22f, 0.17f, 1f);
+        public Color accentColor = new(0.91f, 0.64f, 0.32f, 1f);
+        public Color dangerColor = new(0.86f, 0.52f, 0.42f, 1f);
 
         [Header("Buttons")]
         public UiButtonSpriteEntry[] buttons =

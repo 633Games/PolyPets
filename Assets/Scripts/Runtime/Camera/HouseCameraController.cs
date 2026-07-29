@@ -14,8 +14,11 @@ namespace PolyPets.Camera
         [SerializeField] private float fieldOfView = 32f;
         [SerializeField] private bool orthographic;
         [SerializeField] private float orthographicSize = 3.2f;
+        [Tooltip("If off (default), Play keeps the Camera transform/lens you set in the scene. Use PolyPets → Frame Camera On Active Room to reframe manually.")]
+        [SerializeField] private bool reframeOnStart;
 
         public UnityEngine.Camera TargetCamera => targetCamera;
+        public bool ReframeOnStart => reframeOnStart;
 
         private void Reset()
         {
@@ -24,10 +27,9 @@ namespace PolyPets.Camera
 
         private void Awake()
         {
-            if (targetCamera == null)
-                targetCamera = GetComponent<UnityEngine.Camera>();
-
-            ApplyLens();
+            EnsureCamera();
+            if (reframeOnStart)
+                ApplyLens();
         }
 
         public void ApplyLens()

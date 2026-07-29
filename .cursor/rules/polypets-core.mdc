@@ -1,0 +1,18 @@
+---
+description: PolyPets core map, constraints, and where to look first
+alwaysApply: true
+---
+
+# PolyPets core
+
+- **Repo:** `https://github.com/633Games/PolyPets` only. Never clone, link, or push `Shilo/PolyPet` or any other PolyPet fork.
+- Unity **6.3 LTS** · URP · main scene `Assets/Scenes/House_LivingRoom.unity`
+- Before broad search, read `.cursor/PROJECT_MAP.md` and `.cursor/KNOWN_ISSUES.md`
+- Live Unity inspect/exec: use `.cursor/unity/Invoke-Unity.ps1` (skill `unity-bridge`) — not full `.unity` YAML, screenshots, or Editor.log
+- Own code: `Assets/Scripts/Runtime/` and `Assets/Scripts/Editor/` — do not edit `Assets/Feel/` or commit `Library/`
+- Design docs live in `docs/` — prefer them over inventing features
+- After UI rebuilds, verify Shop + Feed + Play dock buttons are serialized on `CareHudController` (bridge `get-component`)
+- Camera framing is user-owned: never force reframe unless `reframeOnStart` is true
+- Soft shadows stay on; day/night must stay throttled
+- Play target: **480×720**
+- Commit only when asked; author **633Games**

@@ -55,7 +55,7 @@ namespace PolyPets.Rendering
             return profile;
         }
 
-        public static void EnableCameraPostProcessing(Camera camera, bool hdr = true)
+        public static void EnableCameraPostProcessing(UnityEngine.Camera camera, bool hdr = true)
         {
             if (camera == null)
                 return;

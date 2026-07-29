@@ -241,7 +241,7 @@ namespace PolyPets.Minigames
             return $"Fishing ({_round + 1}/{rounds}) — REEL\n" +
                    "Hold Space/Click = bar UP · release = fall\n" +
                    "Keep [BAR] on the fish ><\n\n" +
-                   DrawMeter("FISH", _fishY, '><', '.') + "\n" +
+                   DrawMeter("FISH", _fishY, '>', '.') + "\n" +
                    DrawMeter("BAR ", _barY, '#', '-') + "\n" +
                    DrawMeter("CATCH", _catchMeter, '=', ' ');
         }

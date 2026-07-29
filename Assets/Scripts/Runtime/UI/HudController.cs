@@ -29,7 +29,7 @@ namespace PolyPets.UI
         {
             _coins = coins;
             if (coinText != null)
-                coinText.text = $"{_coins}";
+                coinText.text = $"✦ {_coins}";
         }
 
         public void SetRoomName(string roomName)
@@ -55,12 +55,12 @@ namespace PolyPets.UI
             int m = Mathf.FloorToInt((hours - Mathf.Floor(hours)) * 60f);
             string phaseLabel = phase switch
             {
-                DayNightCycle.Phase.Dawn => "Dawn",
-                DayNightCycle.Phase.Day => "Day",
-                DayNightCycle.Phase.Dusk => "Dusk",
-                _ => "Night"
+                DayNightCycle.Phase.Dawn => "soft morning",
+                DayNightCycle.Phase.Day => "daylight",
+                DayNightCycle.Phase.Dusk => "golden hour",
+                _ => "lamp light"
             };
-            return $"{h:00}:{m:00}  {phaseLabel}";
+            return $"{h:00}:{m:00} · {phaseLabel}";
         }
     }
 }

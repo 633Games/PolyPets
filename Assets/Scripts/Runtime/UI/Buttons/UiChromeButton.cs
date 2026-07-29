@@ -76,18 +76,14 @@ namespace PolyPets.UI
             if (_button == null)
                 _button = GetComponent<Button>();
 
-            if (_button != null && spritePack.buttonBackground != null)
+            if (_button != null)
             {
                 var colors = _button.colors;
-                colors.highlightedColor = new Color(1f, 1f, 1f, 1f);
-                colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-                colors.disabledColor = new Color(0.6f, 0.6f, 0.6f, 0.5f);
+                colors.normalColor = Color.white;
+                colors.highlightedColor = new Color(1f, 0.97f, 0.92f, 1f);
+                colors.pressedColor = new Color(0.94f, 0.88f, 0.78f, 1f);
+                colors.disabledColor = new Color(0.85f, 0.82f, 0.78f, 0.55f);
                 _button.colors = colors;
-
-                if (spritePack.buttonBackgroundPressed != null)
-                {
-                    // Keep simple ColorTint; swap sprite on press via trigger if desired later.
-                }
             }
         }
 

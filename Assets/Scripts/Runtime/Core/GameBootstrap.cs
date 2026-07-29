@@ -33,7 +33,8 @@ namespace PolyPets.Core
             if (house != null)
                 house.Initialize();
 
-            if (houseCamera != null && house != null)
+            // Keep scene camera framing unless HouseCameraController explicitly opts in.
+            if (houseCamera != null && house != null && houseCamera.ReframeOnStart)
                 houseCamera.FocusRoom(house.ActiveRoom);
 
             if (dayNight != null)

@@ -92,11 +92,20 @@ namespace PolyPets.EditorTools
             var tutorial = systems.AddComponent<StarterTutorial>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
-            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house);
-            BuildMinigameOverlay(hud.canvas.transform, minigameHud);
-            var shop = BuildFoodShopPanel(hud.canvas.transform, economy, inventory, house);
+            var hud = CozyHudBuilder.BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house);
+            CozyHudBuilder.BuildMinigameOverlay(hud.canvas.transform, minigameHud);
+            var shop = CozyHudBuilder.BuildFoodShopPanel(hud.canvas.transform, economy, inventory, house);
+            // Persist shop + systems onto CareHud so Play mode keeps the Shop button wired.
+            var careSo = new SerializedObject(hud.care);
+            careSo.FindProperty("economy").objectReferenceValue = economy;
+            careSo.FindProperty("inventory").objectReferenceValue = inventory;
+            careSo.FindProperty("minigames").objectReferenceValue = minigames;
+            careSo.FindProperty("house").objectReferenceValue = house;
+            careSo.FindProperty("hud").objectReferenceValue = hud.hud;
+            careSo.FindProperty("shopPanel").objectReferenceValue = shop;
+            careSo.ApplyModifiedPropertiesWithoutUndo();
             hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop);
-            BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials);
+            CozyHudBuilder.BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials.Palette);
 
             WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care, tutorial);
             WireHouseCamera(houseCam, mainCamera);
@@ -575,6 +584,9 @@ namespace PolyPets.EditorTools
             so.FindProperty("timeOfDay").floatValue = 0.35f;
             so.FindProperty("running").boolValue = true;
             so.FindProperty("editorPreview").boolValue = true;
+            var interval = so.FindProperty("visualUpdateInterval");
+            if (interval != null)
+                interval.floatValue = 0.25f;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // Force default gradients via public API

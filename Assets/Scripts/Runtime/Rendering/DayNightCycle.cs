@@ -8,6 +8,7 @@ namespace PolyPets.Rendering
     /// <summary>
     /// Drives sun / fill / lamp / ambient / post exposure across a looping day.
     /// Tuned for a cozy cel-shaded desktop house (not a full outdoor sim).
+    /// Visuals update on a throttle — applying every frame made the companion feel laggy.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public sealed class DayNightCycle : MonoBehaviour
@@ -27,6 +28,8 @@ namespace PolyPets.Rendering
         [SerializeField] private float timeOfDay = 0.35f;
         [SerializeField] private bool running = true;
         [SerializeField] private bool editorPreview = true;
+        [Tooltip("How often lighting/post is refreshed while playing. Lower = smoother day cycle, higher = cheaper.")]
+        [SerializeField] private float visualUpdateInterval = 0.25f;
 
         [Header("Lights")]
         [SerializeField] private Light sunLight;
@@ -45,13 +48,16 @@ namespace PolyPets.Rendering
         [SerializeField] private AnimationCurve whiteBalanceTemp = AnimationCurve.Linear(0f, -8f, 0.5f, 12f);
 
         [Header("Outputs")]
-        [SerializeField] private Camera targetCamera;
+        [SerializeField] private UnityEngine.Camera targetCamera;
         [SerializeField] private Volume globalVolume;
         [FormerlySerializedAs("onPhaseChanged")]
         [SerializeField] private bool debugLogPhase;
 
         private Phase _phase = Phase.Day;
         private ColorAdjustmentsDriver _colorDriver;
+        private float _visualTimer;
+        private float _lastAppliedTime = -999f;
+        private bool _sunWasEnabled = true;
 
         public float TimeOfDay01 => timeOfDay;
         public float DayLengthSeconds => dayLengthSeconds;
@@ -69,21 +75,29 @@ namespace PolyPets.Rendering
         {
             EnsureDefaults();
             _colorDriver = ColorAdjustmentsDriver.FromVolume(globalVolume);
-            Apply(timeOfDay);
+            SoftenSunShadows();
+            Apply(timeOfDay, force: true);
         }
 
         private void Update()
         {
-            if (!Application.isPlaying && !editorPreview)
+            // Edit-mode scrubbing is OnValidate-only — Update every frame in the editor was a big hitch.
+            if (!Application.isPlaying)
                 return;
 
-            if (running && Application.isPlaying && dayLengthSeconds > 0.01f)
+            if (running && dayLengthSeconds > 0.01f)
             {
                 timeOfDay += Time.deltaTime / dayLengthSeconds;
                 if (timeOfDay >= 1f)
                     timeOfDay -= Mathf.Floor(timeOfDay);
             }
 
+            float interval = Mathf.Max(0.05f, visualUpdateInterval);
+            _visualTimer += Time.deltaTime;
+            if (_visualTimer < interval && Mathf.Abs(timeOfDay - _lastAppliedTime) < 0.002f)
+                return;
+
+            _visualTimer = 0f;
             Apply(timeOfDay);
         }
 
@@ -93,7 +107,7 @@ namespace PolyPets.Rendering
         {
             EnsureDefaults();
             timeOfDay = Mathf.Repeat(value01, 1f);
-            Apply(timeOfDay);
+            Apply(timeOfDay, force: true);
         }
 
         public void SkipTo(Phase phase)
@@ -108,10 +122,16 @@ namespace PolyPets.Rendering
             });
         }
 
-        public void Apply(float t)
+        public void Apply(float t) => Apply(t, force: false);
+
+        private void Apply(float t, bool force)
         {
             EnsureDefaults();
             t = Mathf.Repeat(t, 1f);
+
+            if (!force && Mathf.Abs(t - _lastAppliedTime) < 0.0005f)
+                return;
+            _lastAppliedTime = t;
 
             // Sun orbits: midnight below horizon, noon overhead-ish for the room.
             float sunAngle = t * 360f - 90f;
@@ -120,7 +140,12 @@ namespace PolyPets.Rendering
                 sunLight.transform.rotation = Quaternion.Euler(sunOrbitAxis.normalized * sunAngle);
                 sunLight.intensity = EvaluateOrDefault(sunIntensity, t, 1f);
                 sunLight.color = sunColor != null ? sunColor.Evaluate(t) : Color.white;
-                sunLight.enabled = sunLight.intensity > 0.01f;
+                bool on = sunLight.intensity > 0.01f;
+                if (on != _sunWasEnabled)
+                {
+                    sunLight.enabled = on;
+                    _sunWasEnabled = on;
+                }
             }
 
             if (fillLight != null)
@@ -164,6 +189,18 @@ namespace PolyPets.Rendering
             }
         }
 
+        private void SoftenSunShadows()
+        {
+            if (sunLight == null)
+                return;
+            // Keep soft shadows in Play; hard shadows + a moving sun is what felt expensive.
+            if (sunLight.shadows == LightShadows.None)
+                sunLight.shadows = LightShadows.Soft;
+            else if (sunLight.shadows == LightShadows.Hard)
+                sunLight.shadows = LightShadows.Soft;
+            sunLight.shadowStrength = Mathf.Clamp(sunLight.shadowStrength <= 0.01f ? 0.65f : sunLight.shadowStrength, 0.35f, 0.85f);
+        }
+
         public static Phase EvaluatePhase(float t)
         {
             t = Mathf.Repeat(t, 1f);
@@ -185,7 +222,6 @@ namespace PolyPets.Rendering
 
         private static float DayFactor(float t)
         {
-            // 1 around noon, 0 at midnight.
             return Mathf.Clamp01(1f - Mathf.Abs(t - 0.5f) * 2f);
         }
 
@@ -285,11 +321,12 @@ namespace PolyPets.Rendering
         private void OnValidate()
         {
             EnsureDefaults();
+            visualUpdateInterval = Mathf.Max(0.05f, visualUpdateInterval);
 
-            if (!Application.isPlaying)
+            if (!Application.isPlaying && editorPreview)
             {
                 _colorDriver = ColorAdjustmentsDriver.FromVolume(globalVolume);
-                Apply(timeOfDay);
+                Apply(timeOfDay, force: true);
             }
         }
 #endif
@@ -302,6 +339,9 @@ namespace PolyPets.Rendering
     internal sealed class ColorAdjustmentsDriver
     {
         private readonly VolumeProfile _profile;
+        private UnityEngine.Rendering.Universal.ColorAdjustments _color;
+        private UnityEngine.Rendering.Universal.WhiteBalance _whiteBalance;
+        private bool _resolved;
 
         private ColorAdjustmentsDriver(VolumeProfile profile)
         {
@@ -320,18 +360,25 @@ namespace PolyPets.Rendering
             if (_profile == null)
                 return;
 
-            if (_profile.TryGet(out UnityEngine.Rendering.Universal.ColorAdjustments color))
+            if (!_resolved)
             {
-                color.active = true;
-                color.postExposure.overrideState = true;
-                color.postExposure.value = exposure;
+                _profile.TryGet(out _color);
+                _profile.TryGet(out _whiteBalance);
+                _resolved = true;
             }
 
-            if (_profile.TryGet(out UnityEngine.Rendering.Universal.WhiteBalance whiteBalance))
+            if (_color != null)
             {
-                whiteBalance.active = true;
-                whiteBalance.temperature.overrideState = true;
-                whiteBalance.temperature.value = temperature;
+                _color.active = true;
+                _color.postExposure.overrideState = true;
+                _color.postExposure.value = exposure;
+            }
+
+            if (_whiteBalance != null)
+            {
+                _whiteBalance.active = true;
+                _whiteBalance.temperature.overrideState = true;
+                _whiteBalance.temperature.value = temperature;
             }
         }
     }
