@@ -43,7 +43,9 @@ namespace PolyPets.EditorTools
         {
             EnsureFolders();
             PolyPetsUrpSetup.EnsureUrpPipelineAssets();
+            var palette = MaterialPaletteFactory.EnsurePalette(showDialog: false);
             var spritePack = UiPrefabFactory.BuildUiPrefabKit(showDialog: false);
+            VendorSpritePackApplier.ApplyVendorSprites(showDialog: false);
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
@@ -51,7 +53,7 @@ namespace PolyPets.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "House_LivingRoom";
 
-            var materials = CreateOrLoadMaterials();
+            var materials = CreateMaterialKit(palette);
             var pets = PetCatalogFactory.EnsureStarterPets();
             var volumeProfile = CreateOrLoadVolumeProfile();
             var foods = FoodCatalogFactory.EnsureDefaultFoods();
@@ -226,6 +228,9 @@ namespace PolyPets.EditorTools
             public Material CatPrimary;
             public Material CatSecondary;
             public Material Accent;
+            public Material Rug;
+            public Material Bowl;
+            public MaterialPalette Palette;
         }
 
         private struct LightKit
@@ -235,21 +240,31 @@ namespace PolyPets.EditorTools
             public Light Lamp;
         }
 
-        private static MaterialKit CreateOrLoadMaterials()
+        private static MaterialKit CreateMaterialKit(MaterialPalette palette)
         {
+            // All house/pet mats come from the locked 25-material palette in Assets/Materials/.
             return new MaterialKit
             {
-                Floor = GetOrCreateCelMaterial("Mat_Floor_WornWood", new Color(0.45f, 0.32f, 0.22f), new Color(0.28f, 0.18f, 0.14f), outline: 0.008f),
-                Wall = GetOrCreateCelMaterial("Mat_Wall_Peeling", new Color(0.62f, 0.58f, 0.5f), new Color(0.4f, 0.36f, 0.34f), outline: 0.006f),
-                Trim = GetOrCreateCelMaterial("Mat_Trim_Dark", new Color(0.25f, 0.22f, 0.2f), new Color(0.12f, 0.1f, 0.1f), outline: 0.01f),
-                Prop = GetOrCreateCelMaterial("Mat_Prop_Dusty", new Color(0.4f, 0.38f, 0.36f), new Color(0.22f, 0.2f, 0.2f), outline: 0.01f),
-                CatPrimary = GetOrCreateCelMaterial("Mat_Cat_Orange", new Color(0.86f, 0.55f, 0.28f), new Color(0.45f, 0.25f, 0.16f), outline: 0.014f),
-                CatSecondary = GetOrCreateCelMaterial("Mat_Cat_Dark", new Color(0.18f, 0.15f, 0.13f), new Color(0.08f, 0.06f, 0.06f), outline: 0.012f),
-                Accent = GetOrCreateCelMaterial("Mat_Accent_Lamp", new Color(0.95f, 0.78f, 0.45f), new Color(0.55f, 0.35f, 0.2f), outline: 0.01f),
+                Floor = palette.floorWornWood,
+                Wall = palette.wallPeeling,
+                Trim = palette.trimDark,
+                Prop = palette.propDusty,
+                CatPrimary = palette.catOrange,
+                CatSecondary = palette.catDark,
+                Accent = palette.accentLamp,
+                Rug = palette.rugCharcoal,
+                Bowl = palette.bowlCeramic,
+                Palette = palette,
             };
         }
 
         private static Material GetOrCreateCelMaterial(string name, Color color, Color shade, float outline)
+        {
+            // Legacy helper — prefer MaterialPaletteFactory.EnsurePalette().
+            return MaterialPaletteFactory.Load(name) ?? CreateLegacyCel(name, color, shade, outline);
+        }
+
+        private static Material CreateLegacyCel(string name, Color color, Color shade, float outline)
         {
             var path = $"{MaterialsFolder}/{name}.mat";
             var shader = Shader.Find("PolyPets/CelShade")
@@ -380,7 +395,7 @@ namespace PolyPets.EditorTools
             rug.transform.SetParent(roomGo.transform, false);
             rug.transform.localPosition = new Vector3(0f, 0.01f, -0.3f);
             rug.transform.localScale = new Vector3(2.2f, 0.02f, 1.4f);
-            ApplyMaterial(rug, mats.Trim);
+            ApplyMaterial(rug, mats.Rug != null ? mats.Rug : mats.Trim);
 
             var focus = CreateChild(roomGo, "FocusAnchor");
             focus.transform.localPosition = new Vector3(0f, 0.2f, 0.4f);
@@ -849,8 +864,7 @@ namespace PolyPets.EditorTools
                 pets.cat,
                 pets.dog,
                 pets.rabbit,
-                materials.CatPrimary,
-                materials.CatSecondary);
+                materials.Palette);
 
             root.transform.SetAsLastSibling();
         }

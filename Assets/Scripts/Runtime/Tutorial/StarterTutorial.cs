@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using PolyPets.House;
 using PolyPets.Minigames;
 using PolyPets.Pets;
+using PolyPets.Rendering;
 
 namespace PolyPets.Tutorial
 {
@@ -37,6 +38,7 @@ namespace PolyPets.Tutorial
         [SerializeField] private PetDefinition catDef;
         [SerializeField] private PetDefinition dogDef;
         [SerializeField] private PetDefinition rabbitDef;
+        [SerializeField] private MaterialPalette materialPalette;
         [SerializeField] private Material petPrimary;
         [SerializeField] private Material petSecondary;
 
@@ -78,8 +80,7 @@ namespace PolyPets.Tutorial
             PetDefinition cat,
             PetDefinition dog,
             PetDefinition rabbit,
-            Material primary,
-            Material secondary)
+            MaterialPalette palette)
         {
             petParent = petsRoot;
             starterRoom = room;
@@ -87,8 +88,9 @@ namespace PolyPets.Tutorial
             catDef = cat;
             dogDef = dog;
             rabbitDef = rabbit;
-            petPrimary = primary;
-            petSecondary = secondary;
+            materialPalette = palette;
+            if (palette != null)
+                palette.GetPetPair(PetSpecies.Cat, out petPrimary, out petSecondary);
         }
 
         private void OnEnable()
@@ -147,7 +149,14 @@ namespace PolyPets.Tutorial
                 _ => catDef,
             };
 
+            if (materialPalette != null)
+                materialPalette.GetPetPair(species, out petPrimary, out petSecondary);
+
+            // Prefer ceramic bowl mat from palette when feeding visuals are built.
+            var bowlMat = materialPalette != null ? materialPalette.bowlCeramic : petSecondary;
             SpawnedPet = StarterPetFactory.Spawn(species, petName, def, petParent, petPrimary, petSecondary);
+            if (SpawnedPet != null && bowlMat != null)
+                SpawnedPet.EnsureFoodBowl(bowlMat);
             if (starterRoom != null)
                 starterRoom.SetOccupant(SpawnedPet);
             minigameRouter?.SetActivePet(SpawnedPet);

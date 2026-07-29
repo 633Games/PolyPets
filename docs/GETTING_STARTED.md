@@ -26,10 +26,11 @@ After compile finishes:
 That single menu:
 
 1. Ensures **URP** pipeline assets  
-2. Builds UI sprite pack + materials + volume profile  
-3. Applies vendored **Kenney / game-icons** art into `UiSpritePack_Default` (see [`SPRITE_PACKS.md`](SPRITE_PACKS.md))  
-4. Creates **`Assets/Scenes/House_LivingRoom.unity`** — cel-shaded greybox living room, lights, day/night, HUD, tutorial, minigames, shop  
-5. Opens the scene  
+2. Builds the locked **25 materials** in `Assets/Materials/` ([palette](COLOR_PALETTE.md))  
+3. Builds UI sprite pack + materials + volume profile  
+4. Applies vendored **Kenney / game-icons** art into `UiSpritePack_Default` (see [`SPRITE_PACKS.md`](SPRITE_PACKS.md))  
+5. Creates **`Assets/Scenes/House_LivingRoom.unity`** — cel-shaded greybox living room, lights, day/night, HUD, tutorial, minigames, shop  
+6. Opens the scene  
 
 On a fresh clone, Unity may also pop a **Welcome to PolyPets** dialog offering the same setup.
 

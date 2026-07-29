@@ -35,6 +35,7 @@ See also: [`GETTING_STARTED.md`](GETTING_STARTED.md).
 | Menu | What it does |
 |------|----------------|
 | `PolyPets/★ First-Time Setup (run this)` | **One-click** URP + full scene + open it |
+| `PolyPets/Materials/Rebuild Color Palette (25 mats)` | Locked cel materials in `Assets/Materials/` |
 | `PolyPets/Ensure URP Pipeline Assets` | Creates/assigns `PolyPets_URP` + renderer (HDR, extra lights) |
 | `PolyPets/Bootstrap Starter House Scene` | Full scene scaffold (also called by First-Time Setup) |
 | `PolyPets/Rebuild Volume Profile` | Recreates bloom/vignette/grade overrides |
