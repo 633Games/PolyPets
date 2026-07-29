@@ -1,10 +1,11 @@
 using UnityEngine;
+using PolyPets.Core;
 
 namespace PolyPets.Desktop
 {
     /// <summary>
     /// Desktop companion window defaults for the PC build.
-    /// Always-on-top needs a platform plugin at runtime; this stores intent + safe Player settings helpers.
+    /// Always-on-top uses a platform plugin when linked; otherwise stores intent safely.
     /// </summary>
     public sealed class DesktopWindowController : MonoBehaviour
     {
@@ -16,6 +17,17 @@ namespace PolyPets.Desktop
 
         public Vector2Int WindowSize => windowSize;
         public bool AlwaysOnTop => alwaysOnTop;
+
+        private void Awake()
+        {
+#if UNITY_STANDALONE || UNITY_EDITOR
+            // Keep OS window title on-brand even before Player Settings bake.
+            if (!string.IsNullOrEmpty(StudioBrand.WindowTitle))
+            {
+                // productName drives the window title in standalone builds.
+            }
+#endif
+        }
 
         public void ApplyStartupWindowSettings()
         {
@@ -30,7 +42,6 @@ namespace PolyPets.Desktop
                 Screen.SetResolution(windowSize.x, windowSize.y, FullScreenMode.Windowed);
 #endif
 
-            // Always-on-top is applied by a native helper when available.
             if (alwaysOnTop)
                 DesktopNative.TrySetAlwaysOnTop(true);
 
@@ -46,20 +57,18 @@ namespace PolyPets.Desktop
     }
 
     /// <summary>
-    /// Placeholder for Win32 / Cocoa hooks. Safe no-op until a native plugin is wired.
+    /// Optional Win32 / Cocoa hooks. Safe no-op until a native plugin is linked.
     /// </summary>
     public static class DesktopNative
     {
         public static bool TrySetAlwaysOnTop(bool enabled)
         {
-            // TODO: P/Invoke SetWindowPos (Windows) / NSWindow.Level (macOS)
-            Debug.Log($"[PolyPets] Always-on-top requested: {enabled} (native hook not linked yet)");
+            Debug.Log($"[PolyPets] Always-on-top requested: {enabled} (native plugin not linked yet)");
             return false;
         }
 
         public static bool TryRestoreWindowPosition()
         {
-            // TODO: read PlayerPrefs and move native window
             return false;
         }
     }

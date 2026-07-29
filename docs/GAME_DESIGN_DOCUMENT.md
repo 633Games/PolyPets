@@ -1,6 +1,7 @@
 # PolyPets — Game Design Document
 
-**Working title:** PolyPets  
+**Title:** PolyPets  
+**Studio:** 633 Games  
 **Engine:** Unity (PC / Windows desktop)  
 **Genre:** Desktop companion · Tamagotchi · Idle clicker · Light minigames  
 **Platform:** Small always-on-top PC window  
@@ -354,7 +355,7 @@ Pets only become hungry, unhappy, and dirty. Clean scrub restores cleanliness; f
 ### Desktop features (Windows first)
 
 - Borderless / small windowed mode (**480×720** default)  
-- `Always on top` via Win32 hook or Unity player setting + plugin (`DesktopNative` stub in place)  
+- `Always on top` via Win32 hook or Unity player setting + plugin (`DesktopNative` ready for native link)  
 - Remember window position/size  
 
 ### Systems map
@@ -453,7 +454,7 @@ Bootstrap already places: `GameBootstrap`, `HouseController`, `RoomRoot`, `PetAg
 | Offline earn | None / capped / full | **Capped** (2–4h) |
 | Second currency | Coins only vs Coins+Stars | **Coins only** until Phase 1 end |
 | Minigame fail | Retry free vs fee | **Free retry**, lower rewards if spam |
-| Art production | In-house greybox → polish | Greybox animals ASAP for feel |
+| Art production | In-house cel dress → polish | Keep box-pet silhouette readable |
 
 ---
 

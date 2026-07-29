@@ -1,0 +1,8 @@
+# PolyPets — 633 Games
+
+companyName: 633 Games
+productName: PolyPets
+applicationIdentifier: com.633games.polypets
+
+Applied automatically by First-Time Setup (`StudioBrandingSetup`).
+See `docs/STUDIO_BRANDING.md`.

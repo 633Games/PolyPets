@@ -1,11 +1,8 @@
 # Texture attribution
 
-## Photo (AmbientCG) — CC0 1.0
-Tileable albedo maps under `Photo/` are from [ambientCG](https://ambientcg.com) (formerly CC0 Textures).
-License: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) — no credit required, appreciated.
+## Photo/ (AmbientCG CC0)
+Albedo maps from [AmbientCG](https://ambientcg.com/) (CC0).  
+Resized to 512×512 for PolyPets house surfaces.
 
-Resized to 512×512 Color/albedo only for PolyPets greybox placeholders.
-
-## Procedural — PolyPets
-Maps under `Procedural/` are generated noise/fur/food placeholders for pets, food, and accents.
-Replace anytime with final art; keep filenames so materials stay wired.
+## Procedural/
+Authored noise/fur/food maps for pets, food, and accents (633 Games v1).

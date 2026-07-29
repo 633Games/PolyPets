@@ -5,7 +5,7 @@ using PolyPets.Needs;
 namespace PolyPets.Pets
 {
     /// <summary>
-    /// Builds greybox starter pets until art arrives.
+    /// Builds starter pets (cel-shaded box pals) for the demo slice.
     /// </summary>
     public static class StarterPetFactory
     {

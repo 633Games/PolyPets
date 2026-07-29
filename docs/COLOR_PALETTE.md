@@ -9,7 +9,7 @@ Palette asset: `Assets/ScriptableObjects/Rendering/MaterialPalette_V1.asset`
 
 Shader: `PolyPets/CelShade` (`_BaseMap` albedo × `_BaseColor` + `_ShadeColor` + outline)
 
-**Textures:** every mat has an albedo in `Assets/Art/Textures/` (AmbientCG photo or procedural placeholder). Rebuild wires `_BaseMap`.
+**Textures:** every mat has an albedo in `Assets/Art/Textures/` (AmbientCG photo or procedural v1). Rebuild wires `_BaseMap`.
 
 ---
 
@@ -47,6 +47,6 @@ Shader: `PolyPets/CelShade` (`_BaseMap` albedo × `_BaseColor` + `_ShadeColor` +
 
 ## Mood
 
-Warm rundown house + box pets. Photo maps are **AmbientCG CC0** placeholders; pet/food maps are procedural until final art.
+Warm rundown house + box pets. Photo maps are **AmbientCG CC0**; pet/food maps are procedural v1.
 
 Swap textures by replacing files under `Assets/Art/Textures/` (same names), then **Rebuild Color Palette**.

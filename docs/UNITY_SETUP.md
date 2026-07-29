@@ -99,7 +99,7 @@ Scrub `Time Of Day` on the component in Edit Mode (`editorPreview`) to art-direc
 `DesktopWindowController` on Play:
 
 - Windowed **480×720**
-- Always-on-top request via `DesktopNative` stub
+- Always-on-top request via `DesktopNative` (native plugin when linked)
 
 Player Settings:
 

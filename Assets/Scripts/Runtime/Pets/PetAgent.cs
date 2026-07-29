@@ -6,7 +6,7 @@ using PolyPets.Shop;
 namespace PolyPets.Pets
 {
     /// <summary>
-    /// Runtime pet instance. Visuals can be greybox primitives or a swapped mesh later.
+    /// Runtime pet instance. Visuals are cel-shaded box pals (swap mesh later if desired).
     /// </summary>
     public sealed class PetAgent : MonoBehaviour
     {

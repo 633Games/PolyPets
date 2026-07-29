@@ -79,7 +79,7 @@ namespace PolyPets.EditorTools
                                            ?? LoadSprite($"{KenneyGrey}/button_rectangle_depth_flat.png");
             pack.buttonBackgroundDisabled = LoadSprite($"{KenneyGrey}/button_rectangle_flat.png");
 
-            // Warm companion chrome (matches greybox living room).
+            // Warm companion chrome (matches the living-room palette).
             pack.labelColor = new Color(0.95f, 0.92f, 0.88f, 1f);
             pack.accentColor = new Color(0.95f, 0.82f, 0.45f, 1f);
             pack.dangerColor = new Color(0.85f, 0.32f, 0.28f, 1f);

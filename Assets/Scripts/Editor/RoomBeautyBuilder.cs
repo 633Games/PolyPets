@@ -6,7 +6,7 @@ using PolyPets.Rendering;
 namespace PolyPets.EditorTools
 {
     /// <summary>
-    /// Builds cozy multi-part greybox rooms from the locked 25-material palette.
+    /// Builds cozy multi-part rooms from the locked 25-material palette.
     /// Goal: after First-Time Setup the house already feels like half the game.
     /// </summary>
     public static class RoomBeautyBuilder

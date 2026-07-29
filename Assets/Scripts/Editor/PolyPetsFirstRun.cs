@@ -2,11 +2,12 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using PolyPets.Core;
 
 namespace PolyPets.EditorTools
 {
     /// <summary>
-    /// One-click entry for a fresh clone: URP + full greybox house scene.
+    /// One-click entry for a fresh clone: URP + full house scene + 633 Games branding.
     /// Also nudges once on editor load if the starter scene is missing.
     /// </summary>
     public static class PolyPetsFirstRun
@@ -17,6 +18,8 @@ namespace PolyPets.EditorTools
         [MenuItem("PolyPets/★ First-Time Setup (run this)", priority = -100)]
         public static void FirstTimeSetup()
         {
+            StudioBrandingSetup.ApplyPlayerBranding();
+
             // Prefer importing More Mountains Feel BEFORE this step so upgrade can run.
             bool feelReady = FeelTagEditorTools.IsFeelPresent(out var feelDetail);
 
@@ -47,13 +50,14 @@ namespace PolyPets.EditorTools
             EditorPrefs.SetBool(PrefKey, true);
 
             EditorUtility.DisplayDialog(
-                "PolyPets Ready",
+                $"{StudioBrand.ProductName} — {StudioBrand.StudioName}",
                 "Setup complete.\n\n" +
                 (feelReady
                     ? "Feel pack detected and wired to FEEL[Squash] tags.\n"
                     : "Tip: import More Mountains Feel, then re-run Feel → Upgrade Tags.\n") +
-                "Idle coins drip onto the floor (max 10). Ambient loop is playing on Play.",
-                "Nice");
+                "Idle coins drip onto the floor (max 10). Ambient + juicy SFX on Play.\n\n" +
+                StudioBrand.CopyrightLine,
+                "Let's play");
         }
 
         [InitializeOnLoadMethod]
@@ -72,13 +76,13 @@ namespace PolyPets.EditorTools
                 }
 
                 bool run = EditorUtility.DisplayDialog(
-                    "Welcome to PolyPets",
+                    $"{StudioBrand.StudioName} · {StudioBrand.ProductName}",
                     "Fresh project detected — no starter house scene yet.\n\n" +
                     "Recommended first: import More Mountains Feel (Asset Store).\n\n" +
                     "Then OK to run First-Time Setup:\n" +
-                    "• URP + greybox house + 4 rooms\n" +
-                    "• Minigames, food/décor shops, clean scrub\n" +
-                    "• Idle floor coins + ambient audio\n" +
+                    "• URP + dressed house (4 rooms)\n" +
+                    "• Minigames, shops, clean, idle coins, juicy SFX\n" +
+                    "• 633 Games player branding\n" +
                     "• Feel upgrade if the pack is present\n\n" +
                     "Or: PolyPets → ★ First-Time Setup",
                     "Run setup",

@@ -1,11 +1,15 @@
 # PolyPets
 
-A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, earn currency, buy rooms, and play short minigames — all in a small always-on-top window.
+A low-poly desktop Tamagotchi × idle clicker for PC — by **633 Games**.
 
-**Engine:** Unity **6.3 LTS** (`6000.3.x`, 2026) · URP · cel shade · day/night · Feel tags · UI prefab kit
+Care for box-headed pets, earn currency, buy rooms, and play short minigames in a small always-on-top window.
+
+**Engine:** Unity **6.3 LTS** (`6000.3.x`) · URP · cel shade · day/night · Feel tags · UI prefab kit  
+**Studio:** [633 Games](https://github.com/633Games)
 
 ## Docs
 
+- **[Studio Branding](docs/STUDIO_BRANDING.md)** — 633 Games marks & Player Settings
 - **[Game Design Document](docs/GAME_DESIGN_DOCUMENT.md)** — vision, loop, pets, rooms, minigames
 - **[Unity Setup](docs/UNITY_SETUP.md)** — Unity 6.3 project, cel/post, day-night, bootstrap
 - **[Feel + UI Prefabs](docs/FEEL_AND_UI.md)** — `FEEL[Squash]` tags + sprite-pack buttons
@@ -34,3 +38,5 @@ git checkout cursor/minigame-baselines-da80   # until merged to main
 3. Wait for packages + compile.
 4. Menu: **`PolyPets → ★ First-Time Setup (run this)`**
 5. Press **Play** at **480×720**.
+
+© 633 Games

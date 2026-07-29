@@ -43,6 +43,6 @@ Each species has its own food line:
 
 ## Tutorial copy
 
-1. Welcome to PolyPets  
+1. Welcome — **633 Games presents PolyPets**  
 2. Name your Poly Pet  
 3. Pick Cat / Dog / Rabbit  

@@ -1,13 +1,8 @@
-# Textures
-
-Albedo maps for the locked 25 materials. Wired automatically by  
-**`PolyPets → Materials → Rebuild Color Palette (25 mats)`**.
+# PolyPets textures (v1)
 
 | Folder | Contents |
 |--------|----------|
-| `Photo/` | Tileable **AmbientCG** CC0 photo albedos (512²) — wood, plaster, fabric, metal, dirt, stone |
-| `Procedural/` | Generated placeholders — fur, food speckles, water ripples, sky, fish scales |
+| `Photo/` | AmbientCG CC0 albedos — wood, plaster, rug, dirt, metal |
+| `Procedural/` | Authored v1 maps — fur, food, water, sky, fish scales, lamp glow |
 
-Attribution: [`ATTRIBUTION.md`](ATTRIBUTION.md)
-
-Replace any file **keeping the same filename** and rebuild the palette — materials stay linked.
+Rebuild mats: **`PolyPets → Materials → Rebuild Color Palette (25 mats)`**

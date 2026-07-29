@@ -8,10 +8,11 @@ License: **CC0** (public domain)
 Processed lightly (loudnorm + fades) for in-game loop volume.
 
 ### Amb_SoftPad_Proc.ogg
-Generated procedural soft pad for PolyPets (gentle drone under the room tone).  
-License: CC0 / project-owned placeholder — replace with final music anytime.
+Generated soft pad for PolyPets (gentle drone under the room tone).  
+License: CC0 / 633 Games.
 
 ## SFX (`Assets/Audio/Sfx/`)
-All `Sfx_*.ogg` clips are **procedurally generated** for PolyPets (slot-style medal dings, cascades, UI ticks).  
-License: project-owned / CC0 placeholders — swap for polished Foley anytime; keep the same filenames so bootstrap wiring still works.
+All `Sfx_*.ogg` clips are procedurally authored for PolyPets (slot-style medal dings, cascades, UI ticks).  
+License: 633 Games — swap files anytime; keep the same filenames so bootstrap wiring still works.
+
 

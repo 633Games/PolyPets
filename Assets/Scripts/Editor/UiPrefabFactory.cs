@@ -9,7 +9,7 @@ using PolyPets.UI;
 namespace PolyPets.EditorTools
 {
     /// <summary>
-    /// Builds the reusable UI prefab kit + default sprite pack (placeholder colored icons).
+    /// Builds the reusable UI prefab kit + default sprite pack (chrome sprites + vendor icons).
     /// Swap sprites on the UiSpritePack asset — prefabs pick them up automatically.
     /// </summary>
     public static class UiPrefabFactory
@@ -17,7 +17,7 @@ namespace PolyPets.EditorTools
         private const string RootMenu = "PolyPets/UI/";
         private const string PackPath = "Assets/ScriptableObjects/UI/UiSpritePack_Default.asset";
         private const string PrefabFolder = "Assets/Prefabs/UI/Buttons";
-        private const string PlaceholderFolder = "Assets/Art/UI/Placeholders";
+        private const string ChromeFolder = "Assets/Art/UI/Chrome";
 
         private static readonly UiButtonId[] AllButtons =
         {
@@ -103,7 +103,8 @@ namespace PolyPets.EditorTools
         {
             CreateFolder("Assets", "Art");
             CreateFolder("Assets/Art", "UI");
-            CreateFolder("Assets/Art/UI", "Placeholders");
+            CreateFolder("Assets/Art/UI", "Chrome");
+            CreateFolder("Assets/Art/UI", "Brand");
             CreateFolder("Assets", "ScriptableObjects");
             CreateFolder("Assets/ScriptableObjects", "UI");
             CreateFolder("Assets", "Prefabs");
@@ -128,12 +129,12 @@ namespace PolyPets.EditorTools
                 AssetDatabase.CreateAsset(pack, PackPath);
             }
 
-            pack.panelBackground = GetOrCreatePlaceholderSprite("spr_panel", new Color(0.12f, 0.1f, 0.09f, 0.92f), 64, 64);
-            pack.buttonBackground = GetOrCreatePlaceholderSprite("spr_btn", new Color(0.22f, 0.18f, 0.16f, 1f), 64, 64);
-            pack.buttonBackgroundPressed = GetOrCreatePlaceholderSprite("spr_btn_pressed", new Color(0.16f, 0.13f, 0.12f, 1f), 64, 64);
-            pack.buttonBackgroundDisabled = GetOrCreatePlaceholderSprite("spr_btn_disabled", new Color(0.2f, 0.2f, 0.2f, 0.5f), 64, 64);
+            pack.panelBackground = GetOrCreateChromeSprite("spr_panel", new Color(0.12f, 0.1f, 0.09f, 0.92f), 64, 64);
+            pack.buttonBackground = GetOrCreateChromeSprite("spr_btn", new Color(0.22f, 0.18f, 0.16f, 1f), 64, 64);
+            pack.buttonBackgroundPressed = GetOrCreateChromeSprite("spr_btn_pressed", new Color(0.16f, 0.13f, 0.12f, 1f), 64, 64);
+            pack.buttonBackgroundDisabled = GetOrCreateChromeSprite("spr_btn_disabled", new Color(0.2f, 0.2f, 0.2f, 0.5f), 64, 64);
 
-            // Ensure entries exist for every button id with a placeholder icon.
+            // Ensure entries exist for every button id with a chrome icon.
             var entries = new UiButtonSpriteEntry[AllButtons.Length];
             for (int i = 0; i < AllButtons.Length; i++)
             {
@@ -146,7 +147,7 @@ namespace PolyPets.EditorTools
                 {
                     id = id,
                     label = string.IsNullOrWhiteSpace(label) ? id.ToString() : label,
-                    icon = GetOrCreatePlaceholderSprite($"spr_icon_{id}", AccentFor(id), 64, 64),
+                    icon = GetOrCreateChromeSprite($"spr_icon_{id}", AccentFor(id), 64, 64),
                 };
             }
 
@@ -165,9 +166,9 @@ namespace PolyPets.EditorTools
             _ => new Color(0.9f, 0.6f, 0.35f),
         };
 
-        private static Sprite GetOrCreatePlaceholderSprite(string name, Color color, int w, int h)
+        private static Sprite GetOrCreateChromeSprite(string name, Color color, int w, int h)
         {
-            var path = $"{PlaceholderFolder}/{name}.png";
+            var path = $"{ChromeFolder}/{name}.png";
             if (File.Exists(path))
             {
                 var existing = AssetDatabase.LoadAssetAtPath<Sprite>(path);

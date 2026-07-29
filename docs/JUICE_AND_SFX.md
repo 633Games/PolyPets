@@ -10,7 +10,7 @@
 | **JP pachislot / medal games** | Cascading dings, rising pitch, win stingers | **Design north star for earn moments** |
 | **Tamagotchi / Digimon** | Short chirps on every care action | Feed / clean / room whoosh |
 
-**Bar to clear:** after First-Time Setup, the house looks cozy (cel + dressed rooms) and **every earn/care action sings** — not silent greybox.
+**Bar to clear:** after First-Time Setup, the house looks cozy (cel + dressed rooms) and **every earn/care action sings**.
 
 ## Juicy SFX bank (`Assets/Audio/Sfx/`)
 

@@ -4,7 +4,7 @@ using PolyPets.Pets;
 namespace PolyPets.Rendering
 {
     /// <summary>
-    /// Locked v1 material set — keep all greybox / prop / pet / food art on these 25 mats in Assets/Materials/.
+    /// Locked v1 material set — keep all room / prop / pet / food art on these 25 mats in Assets/Materials/.
     /// </summary>
     [CreateAssetMenu(menuName = "PolyPets/Material Palette", fileName = "MaterialPalette_V1")]
     public sealed class MaterialPalette : ScriptableObject

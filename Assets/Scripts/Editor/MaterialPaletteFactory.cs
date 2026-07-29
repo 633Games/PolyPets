@@ -9,7 +9,7 @@ namespace PolyPets.EditorTools
 {
     /// <summary>
     /// Builds the locked 25-material v1 set under Assets/Materials/ + MaterialPalette_V1 asset,
-    /// and wires albedo maps from Assets/Art/Textures (AmbientCG photo + procedural placeholders).
+    /// and wires albedo maps from Assets/Art/Textures (AmbientCG photo + procedural v1 maps).
     /// Menu: PolyPets → Materials → Rebuild Color Palette (25 mats)
     /// </summary>
     public static class MaterialPaletteFactory
@@ -85,7 +85,7 @@ namespace PolyPets.EditorTools
             EditorGUIUtility.PingObject(palette);
         }
 
-        [MenuItem(RootMenu + "Reimport Texture Placeholders", priority = 2)]
+        [MenuItem(RootMenu + "Reimport Art Textures", priority = 2)]
         public static void ReimportTexturesMenu()
         {
             EnsureTextureImports();
@@ -93,7 +93,7 @@ namespace PolyPets.EditorTools
             EditorUtility.DisplayDialog(
                 "Textures",
                 "Reimported Art/Textures and re-wired material albedos.\n\n" +
-                "Photo = AmbientCG CC0 · Procedural = generated placeholders.",
+                "Photo = AmbientCG CC0 · Procedural = v1 generated maps.",
                 "OK");
         }
 

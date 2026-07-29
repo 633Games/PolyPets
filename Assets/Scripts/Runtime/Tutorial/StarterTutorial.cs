@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using PolyPets.Core;
 using PolyPets.House;
 using PolyPets.Minigames;
 using PolyPets.Pets;
@@ -204,8 +205,8 @@ namespace PolyPets.Tutorial
             {
                 case Step.Welcome:
                     SetCopy(
-                        "Welcome to PolyPets",
-                        "A cozy desktop home for box-headed pals.\nEarn coins in minigames, buy food, keep them happy.");
+                        StudioBrand.WelcomeTitle,
+                        StudioBrand.WelcomeBody);
                     SetNextLabel("Let's go");
                     break;
                 case Step.Name:

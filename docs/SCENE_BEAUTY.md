@@ -1,6 +1,6 @@
 # Scene beauty (bootstrap)
 
-After **`PolyPets → ★ First-Time Setup`**, the house should already feel like half the game — warm cel-shaded rooms, not empty greybox boxes.
+After **`PolyPets → ★ First-Time Setup`**, the house should already feel like half the game — warm cel-shaded rooms, not empty boxes.
 
 ## What setup builds
 - Closed rooms: floor, walls, **ceiling**, front apron, baseboards, crown trim

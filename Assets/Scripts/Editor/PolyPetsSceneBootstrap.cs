@@ -167,14 +167,14 @@ namespace PolyPets.EditorTools
 
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
-                "Starter house scene ready.\n\n" +
+                $"{StudioBrand.PresentsLine}\n{StudioBrand.ProductName}\n\n" +
                 "• Beautiful 4-room house (living / kitchen / bedroom / garden)\n" +
                 "• Cel shade + warm lamp + day/night grade\n" +
                 "• Slot-style juicy SFX on every payout\n" +
                 "• Clean scrub · food/décor shops · idle coins\n" +
                 "• Pet levels · ambient loop\n" +
                 "• Import Feel before setup for MMF upgrade\n\n" +
-                $"Scene: {ScenePath}",
+                $"{StudioBrand.CopyrightLine}\n{ScenePath}",
                 "Nice");
         }
 
@@ -404,7 +404,7 @@ namespace PolyPets.EditorTools
             var room = roomGo.AddComponent<RoomRoot>();
             room.Configure(roomId, displayName);
 
-            // Full cozy greybox dress — walls, ceiling, window, furniture, lamp.
+            // Full room dress — walls, ceiling, window, furniture, lamp.
             if (mats.Palette != null)
                 RoomBeautyBuilder.DressRoom(roomGo, mats.Palette, style);
             else
@@ -844,6 +844,14 @@ namespace PolyPets.EditorTools
             hudRoot.RefreshButtons();
             care.RefreshAll();
 
+            // Persistent studio mark — always visible under the care chrome.
+            var brandBar = CreateUiPanel(canvasGo.transform, "StudioBrandBar", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(0f, 8f), new Vector2(460f, 22f), new Color(0.06f, 0.05f, 0.04f, 0.55f));
+            var brandLabel = CreateUiText(brandBar.transform, "StudioLabel", StudioBrand.HudStudioMark,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 18f),
+                TextAnchor.MiddleCenter, 11);
+            brandLabel.color = new Color(0.91f, 0.66f, 0.29f, 0.95f);
+
             return new HudBundle { hud = hud, care = care, canvas = canvas };
         }
 
@@ -965,17 +973,44 @@ namespace PolyPets.EditorTools
             MaterialKit materials)
         {
             var root = CreateUiPanel(canvas, "TutorialPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(420f, 460f), new Color(0.09f, 0.07f, 0.06f, 0.96f));
+                Vector2.zero, new Vector2(420f, 500f), new Color(0.09f, 0.07f, 0.06f, 0.96f));
 
-            var title = CreateUiText(root.transform, "Title", "Welcome to PolyPets",
-                new Vector2(0.5f, 0.9f), new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(380f, 40f),
-                TextAnchor.MiddleCenter, 22);
+            // Studio brand — hero signal above the product title.
+            var studio = CreateUiText(root.transform, "StudioPresents", StudioBrand.PresentsLine,
+                new Vector2(0.5f, 0.94f), new Vector2(0.5f, 0.94f), Vector2.zero, new Vector2(380f, 22f),
+                TextAnchor.MiddleCenter, 13);
+            studio.color = new Color(0.91f, 0.66f, 0.29f, 1f);
 
-            var body = CreateUiText(root.transform, "Body", "A cozy desktop home for box-headed pals.",
-                new Vector2(0.5f, 0.68f), new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(360f, 140f),
+            var title = CreateUiText(root.transform, "Title", StudioBrand.WelcomeTitle,
+                new Vector2(0.5f, 0.86f), new Vector2(0.5f, 0.86f), Vector2.zero, new Vector2(380f, 40f),
+                TextAnchor.MiddleCenter, 26);
+
+            var body = CreateUiText(root.transform, "Body", StudioBrand.WelcomeBody,
+                new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), Vector2.zero, new Vector2(360f, 150f),
                 TextAnchor.UpperCenter, 15);
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var studioFooter = CreateUiText(root.transform, "StudioFooter", StudioBrand.CopyrightLine,
+                new Vector2(0.5f, 0.04f), new Vector2(0.5f, 0.04f), Vector2.zero, new Vector2(360f, 18f),
+                TextAnchor.MiddleCenter, 11);
+            studioFooter.color = new Color(1f, 1f, 1f, 0.45f);
+
+            // Brand mark image when available
+            var mark = AssetDatabase.LoadAssetAtPath<Texture2D>(StudioBrand.BrandMarkAssetPath);
+            if (mark != null)
+            {
+                var markGo = new GameObject("BrandMark", typeof(RectTransform), typeof(RawImage));
+                markGo.transform.SetParent(root.transform, false);
+                var mrt = markGo.GetComponent<RectTransform>();
+                mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0.94f);
+                mrt.pivot = new Vector2(0.5f, 0.5f);
+                mrt.sizeDelta = new Vector2(36f, 36f);
+                mrt.anchoredPosition = new Vector2(-150f, 0f);
+                var raw = markGo.GetComponent<RawImage>();
+                raw.texture = mark;
+                raw.color = Color.white;
+            }
 
             var inputGo = new GameObject("NameInput", typeof(RectTransform), typeof(Image), typeof(InputField));
             inputGo.transform.SetParent(root.transform, false);
@@ -985,27 +1020,27 @@ namespace PolyPets.EditorTools
             inputGo.GetComponent<Image>().color = new Color(0.18f, 0.15f, 0.13f, 1f);
             var input = inputGo.GetComponent<InputField>();
 
-            var placeholderGo = new GameObject("Placeholder", typeof(RectTransform), typeof(Text));
-            placeholderGo.transform.SetParent(inputGo.transform, false);
-            StretchFull(placeholderGo.GetComponent<RectTransform>(), 8f);
-            var placeholder = placeholderGo.GetComponent<Text>();
-            placeholder.text = "Pet name…";
-            placeholder.color = new Color(1f, 1f, 1f, 0.35f);
-            placeholder.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+            var hintGo = new GameObject("HintText", typeof(RectTransform), typeof(Text));
+            hintGo.transform.SetParent(inputGo.transform, false);
+            StretchFull(hintGo.GetComponent<RectTransform>(), 8f);
+            var hint = hintGo.GetComponent<Text>();
+            hint.text = "Pet name…";
+            hint.color = new Color(1f, 1f, 1f, 0.35f);
+            hint.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
                                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
-            placeholder.fontSize = 16;
+            hint.fontSize = 16;
 
             var inputTextGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
             inputTextGo.transform.SetParent(inputGo.transform, false);
             StretchFull(inputTextGo.GetComponent<RectTransform>(), 8f);
             var inputText = inputTextGo.GetComponent<Text>();
-            inputText.font = placeholder.font;
+            inputText.font = hint.font;
             inputText.fontSize = 16;
             inputText.color = Color.white;
             inputText.supportRichText = false;
 
             input.textComponent = inputText;
-            input.placeholder = placeholder;
+            input.placeholder = hint;
             input.text = "Mochi";
             inputGo.SetActive(false);
 
