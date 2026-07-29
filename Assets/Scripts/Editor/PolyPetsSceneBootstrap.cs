@@ -43,6 +43,9 @@ namespace PolyPets.EditorTools
         public static void BootstrapStarterHouseScene()
         {
             EnsureFolders();
+            StudioBrandingSetup.ApplyPlayerBranding();
+            TrySetInputHandlingBoth();
+            UiFonts.EnsureImportSettings();
             PolyPetsUrpSetup.EnsureUrpPipelineAssets();
             var palette = MaterialPaletteFactory.EnsurePalette(showDialog: false);
             var spritePack = UiPrefabFactory.BuildUiPrefabKit(showDialog: false);
@@ -138,8 +141,9 @@ namespace PolyPets.EditorTools
             BuildMinigameOverlay(hud.canvas.transform, minigameHud);
             var shop = BuildFoodShopPanel(hud.canvas.transform, economy, inventory, house);
             var decorShop = BuildDecorationShopPanel(hud.canvas.transform, economy, decorInventory, house, palette);
-            hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop, decorShop, decorInventory, cleanScrubber);
+            hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop, decorShop, decorInventory, cleanScrubber, desktop, hud.settings);
             BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials);
+            UiFonts.ApplyAllUnder(hud.canvas.transform);
 
             WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care, tutorial);
             WireHouseCamera(houseCam, mainCamera);
@@ -157,6 +161,9 @@ namespace PolyPets.EditorTools
             Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, ScenePath);
 
+            var report = StartupSanity.ValidateSceneReady();
+            Debug.Log("[PolyPets] Startup sanity:\n" + report);
+
             Selection.activeGameObject = tutorial.gameObject;
             EditorGUIUtility.PingObject(tutorial.gameObject);
 
@@ -172,10 +179,25 @@ namespace PolyPets.EditorTools
                 "• Cel shade + warm lamp + day/night grade\n" +
                 "• Slot-style juicy SFX on every payout\n" +
                 "• Clean scrub · food/décor shops · idle coins\n" +
-                "• Pet levels · ambient loop\n" +
+                "• Pet levels · ambient loop · Nunito/Fredoka fonts\n" +
+                "• Dead UI greyed as Coming soon\n" +
                 "• Import Feel before setup for MMF upgrade\n\n" +
+                $"{report}\n\n" +
                 $"{StudioBrand.CopyrightLine}\n{ScenePath}",
                 "Nice");
+        }
+
+        private static void TrySetInputHandlingBoth()
+        {
+            // 0 = Input Manager, 1 = Input System Package, 2 = Both
+            try
+            {
+                PlayerSettings.SetPropertyInt("activeInputHandler", 2);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[PolyPets] Could not set Active Input Handling to Both: {ex.Message}");
+            }
         }
 
         [MenuItem(RootMenu + "Select Starter Scene", priority = 1)]
@@ -675,6 +697,7 @@ namespace PolyPets.EditorTools
             public HudController hud;
             public CareHudController care;
             public Canvas canvas;
+            public SettingsStubPanel settings;
         }
 
         private static HudBundle BuildHud(
@@ -811,14 +834,15 @@ namespace PolyPets.EditorTools
             var extraBar = CreateUiPanel(canvasGo.transform, "ExtraActions", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 88f), new Vector2(460f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.75f));
             if (cleanBtn == null)
-                cleanBtn = CreateChromeProxy(extraBar.transform, "CleanBtn", "Clean", new Vector2(0.12f, 0.5f));
+                cleanBtn = CreateChromeProxy(extraBar.transform, "CleanBtn", "Clean", new Vector2(0.12f, 0.5f), UiButtonId.Clean);
             if (renovateBtn == null)
-                renovateBtn = CreateChromeProxy(extraBar.transform, "DecorBtn", "Décor", new Vector2(0.34f, 0.5f));
+                renovateBtn = CreateChromeProxy(extraBar.transform, "DecorBtn", "Décor", new Vector2(0.34f, 0.5f), UiButtonId.Renovate);
             if (prevBtn == null)
-                prevBtn = CreateChromeProxy(extraBar.transform, "PrevBtn", "◀ Room", new Vector2(0.62f, 0.5f));
+                prevBtn = CreateChromeProxy(extraBar.transform, "PrevBtn", "◀ Room", new Vector2(0.62f, 0.5f), UiButtonId.PrevRoom);
             if (nextBtn == null)
-                nextBtn = CreateChromeProxy(extraBar.transform, "NextBtn", "Room ▶", new Vector2(0.86f, 0.5f));
+                nextBtn = CreateChromeProxy(extraBar.transform, "NextBtn", "Room ▶", new Vector2(0.86f, 0.5f), UiButtonId.NextRoom);
 
+            // Want prompts are Phase 2 — keep prefab for kit, hide in playable scene.
             if (wantPrefab != null)
             {
                 var want = (GameObject)PrefabUtility.InstantiatePrefab(wantPrefab);
@@ -826,7 +850,13 @@ namespace PolyPets.EditorTools
                 var wantRt = want.GetComponent<RectTransform>();
                 wantRt.anchorMin = wantRt.anchorMax = new Vector2(0.5f, 0.22f);
                 wantRt.anchoredPosition = Vector2.zero;
+                want.SetActive(false);
+                UiComingSoon.Apply(want, "Wants — Coming soon");
+                want.SetActive(false);
             }
+
+            // Settings stub (interactive — shows Coming soon content)
+            var settings = BuildSettingsStub(canvasGo.transform);
 
             var so = new SerializedObject(hud);
             so.FindProperty("coinText").objectReferenceValue = coinLabel;
@@ -837,12 +867,14 @@ namespace PolyPets.EditorTools
 
             care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel, cleanLabel, levelLabel);
             care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn, cleanBtn, renovateBtn, prevBtn, nextBtn);
+            care.BindAllChrome(canvasGo.transform);
 
             hud.SetCoins(economy != null ? economy.Coins : 0);
             hud.SetRoomName(roomName);
             hud.BindDayNight(dayNight);
             hudRoot.RefreshButtons();
             care.RefreshAll();
+            UiFonts.ApplyAllUnder(canvasGo.transform);
 
             // Persistent studio mark — always visible under the care chrome.
             var brandBar = CreateUiPanel(canvasGo.transform, "StudioBrandBar", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
@@ -851,8 +883,37 @@ namespace PolyPets.EditorTools
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 18f),
                 TextAnchor.MiddleCenter, 11);
             brandLabel.color = new Color(0.91f, 0.66f, 0.29f, 0.95f);
+            UiFonts.ApplyTitle(brandLabel);
 
-            return new HudBundle { hud = hud, care = care, canvas = canvas };
+            return new HudBundle { hud = hud, care = care, canvas = canvas, settings = settings };
+        }
+
+        private static SettingsStubPanel BuildSettingsStub(Transform canvas)
+        {
+            var shopGo = new GameObject("SettingsStub", typeof(RectTransform));
+            shopGo.transform.SetParent(canvas, false);
+            var shopRt = shopGo.GetComponent<RectTransform>();
+            shopRt.anchorMin = Vector2.zero;
+            shopRt.anchorMax = Vector2.one;
+            shopRt.offsetMin = Vector2.zero;
+            shopRt.offsetMax = Vector2.zero;
+            var panel = shopGo.AddComponent<SettingsStubPanel>();
+
+            var root = CreateUiPanel(shopGo.transform, "SettingsPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(360f, 320f), new Color(0.08f, 0.07f, 0.06f, 0.96f));
+            root.SetActive(false);
+            var title = CreateUiText(root.transform, "Title", "Settings",
+                new Vector2(0.5f, 0.88f), new Vector2(0.5f, 0.88f), Vector2.zero, new Vector2(300f, 28f),
+                TextAnchor.MiddleCenter, 20);
+            UiFonts.ApplyTitle(title);
+            var body = CreateUiText(root.transform, "Body", "Coming soon",
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(300f, 180f),
+                TextAnchor.UpperCenter, 14);
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var close = CreateSimpleButton(root.transform, "Close", "Close", new Vector2(0.5f, 0.1f), new Vector2(120f, 40f));
+            close.onClick.AddListener(panel.Hide);
+            panel.Bind(root, body);
+            return panel;
         }
 
         private static FoodShopPanel BuildFoodShopPanel(
@@ -937,10 +998,11 @@ namespace PolyPets.EditorTools
             return shop;
         }
 
-        private static UiChromeButton CreateChromeProxy(Transform parent, string name, string label, Vector2 anchor)
+        private static UiChromeButton CreateChromeProxy(Transform parent, string name, string label, Vector2 anchor, UiButtonId id)
         {
             var btn = CreateSimpleButton(parent, name, label, anchor, new Vector2(90f, 32f));
             var chrome = btn.gameObject.AddComponent<UiChromeButton>();
+            chrome.SetId(id);
             return chrome;
         }
 
@@ -1026,8 +1088,7 @@ namespace PolyPets.EditorTools
             var hint = hintGo.GetComponent<Text>();
             hint.text = "Pet name…";
             hint.color = new Color(1f, 1f, 1f, 0.35f);
-            hint.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                               ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            hint.font = UiFonts.Body;
             hint.fontSize = 16;
 
             var inputTextGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
@@ -1123,8 +1184,12 @@ namespace PolyPets.EditorTools
             text.alignment = align;
             text.fontSize = fontSize;
             text.color = new Color(0.95f, 0.92f, 0.88f);
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                        ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            bool title = name.IndexOf("Title", System.StringComparison.OrdinalIgnoreCase) >= 0
+                         || name.IndexOf("Studio", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            if (title)
+                UiFonts.ApplyTitle(text);
+            else
+                UiFonts.ApplyBody(text);
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             return text;

@@ -134,8 +134,7 @@ namespace PolyPets.UI
             text.alignment = TextAnchor.MiddleLeft;
             text.fontSize = 13;
             text.color = new Color(0.95f, 0.92f, 0.88f);
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                        ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = UiFonts.Body;
             text.raycastTarget = false;
 
             var button = go.GetComponent<Button>();

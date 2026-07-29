@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using PolyPets.Desktop;
 using PolyPets.Economy;
 using PolyPets.House;
 using PolyPets.Minigames;
@@ -22,6 +23,8 @@ namespace PolyPets.UI
         [SerializeField] private FoodShopPanel shopPanel;
         [SerializeField] private DecorationShopPanel decorationShopPanel;
         [SerializeField] private PetCleanScrubber cleanScrubber;
+        [SerializeField] private DesktopWindowController desktopWindow;
+        [SerializeField] private SettingsStubPanel settingsPanel;
         [SerializeField] private Text hungerText;
         [SerializeField] private Text happinessText;
         [SerializeField] private Text cleanText;
@@ -36,6 +39,9 @@ namespace PolyPets.UI
         [SerializeField] private UiChromeButton playButton;
         [SerializeField] private UiChromeButton prevRoomButton;
         [SerializeField] private UiChromeButton nextRoomButton;
+        [SerializeField] private UiChromeButton homeButton;
+        [SerializeField] private UiChromeButton settingsButton;
+        [SerializeField] private UiChromeButton alwaysOnTopButton;
 
         private PetAgent ActivePet
         {
@@ -79,7 +85,7 @@ namespace PolyPets.UI
         {
             if (btn == null)
                 return;
-            btn.Button.onClick.RemoveListener(action);
+            btn.Button.onClick.RemoveAllListeners();
             btn.Button.onClick.AddListener(action);
             btn.Button.onClick.AddListener(btn.PlayClickFeel);
         }
@@ -129,6 +135,7 @@ namespace PolyPets.UI
             }
 
             decorationShopPanel?.Hide();
+            settingsPanel?.Hide();
             if (shopPanel == null)
             {
                 Debug.LogWarning("[PolyPets] Food shop panel missing.");
@@ -147,6 +154,7 @@ namespace PolyPets.UI
             }
 
             shopPanel?.Hide();
+            settingsPanel?.Hide();
             if (decorationShopPanel == null)
             {
                 Debug.LogWarning("[PolyPets] Décor shop missing.");
@@ -200,6 +208,41 @@ namespace PolyPets.UI
             SetStatus(blurb);
         }
 
+        private void OnHomeClicked()
+        {
+            if (house == null || house.Rooms == null || house.Rooms.Count == 0)
+                return;
+            house.SetActiveRoom(0);
+            hud?.SetRoomName(house.ActiveRoom?.DisplayName ?? "Living Room");
+            decorationShopPanel?.Rebuild();
+            SetStatus("Home — Living Room");
+            RefreshNeedsUi();
+        }
+
+        private void OnSettingsClicked()
+        {
+            shopPanel?.Hide();
+            decorationShopPanel?.Hide();
+            if (settingsPanel != null)
+                settingsPanel.Toggle();
+            else
+                SetStatus("Settings — Coming soon");
+        }
+
+        private void OnAlwaysOnTopClicked()
+        {
+            desktopWindow ??= FindFirstObjectByType<DesktopWindowController>();
+            if (desktopWindow == null)
+            {
+                SetStatus("Always-on-top — Coming soon on this platform");
+                return;
+            }
+
+            bool next = !desktopWindow.AlwaysOnTop;
+            desktopWindow.SetAlwaysOnTop(next);
+            SetStatus(next ? "Always on top — ON" : "Always on top — OFF");
+        }
+
         private void OnPrevRoom()
         {
             house?.PrevRoom();
@@ -242,7 +285,8 @@ namespace PolyPets.UI
 
             bool shopOpen = (shopPanel != null && shopPanel.IsOpen)
                             || (decorationShopPanel != null && decorationShopPanel.IsOpen)
-                            || (cleanScrubber != null && cleanScrubber.IsScrubMode);
+                            || (cleanScrubber != null && cleanScrubber.IsScrubMode)
+                            || (settingsPanel != null && settingsPanel.IsOpen);
             if (statusText != null && needs != null && !shopOpen)
                 statusText.text = needs.StatusLabel();
 
@@ -269,7 +313,9 @@ namespace PolyPets.UI
             FoodShopPanel shop,
             DecorationShopPanel decorShop = null,
             DecorationInventory decorInv = null,
-            PetCleanScrubber scrubber = null)
+            PetCleanScrubber scrubber = null,
+            DesktopWindowController desktop = null,
+            SettingsStubPanel settings = null)
         {
             economy = eco;
             inventory = inv;
@@ -280,6 +326,8 @@ namespace PolyPets.UI
             decorationShopPanel = decorShop;
             decorationInventory = decorInv;
             cleanScrubber = scrubber;
+            desktopWindow = desktop;
+            settingsPanel = settings;
             cleanScrubber?.BindHint(statusText);
         }
 
@@ -302,7 +350,10 @@ namespace PolyPets.UI
             UiChromeButton clean = null,
             UiChromeButton decorate = null,
             UiChromeButton prevRoom = null,
-            UiChromeButton nextRoom = null)
+            UiChromeButton nextRoom = null,
+            UiChromeButton home = null,
+            UiChromeButton settings = null,
+            UiChromeButton alwaysOnTop = null)
         {
             feedButton = feed;
             shopButton = shop;
@@ -312,6 +363,45 @@ namespace PolyPets.UI
             decorateButton = decorate;
             prevRoomButton = prevRoom;
             nextRoomButton = nextRoom;
+            homeButton = home;
+            settingsButton = settings;
+            alwaysOnTopButton = alwaysOnTop;
+            WireButtons();
+        }
+
+        /// <summary>Scan canvas chrome and bind every known interactive id; grey out the rest.</summary>
+        public void BindAllChrome(Transform canvasRoot)
+        {
+            if (canvasRoot == null)
+                return;
+
+            foreach (var chrome in canvasRoot.GetComponentsInChildren<UiChromeButton>(true))
+            {
+                switch (chrome.ButtonId)
+                {
+                    case UiButtonId.Feed: feedButton ??= chrome; break;
+                    case UiButtonId.Shop: shopButton ??= chrome; break;
+                    case UiButtonId.Play: playButton ??= chrome; break;
+                    case UiButtonId.Minigame: minigameButton ??= chrome; break;
+                    case UiButtonId.Clean: cleanButton ??= chrome; break;
+                    case UiButtonId.Renovate: decorateButton ??= chrome; break;
+                    case UiButtonId.PrevRoom: prevRoomButton ??= chrome; break;
+                    case UiButtonId.NextRoom: nextRoomButton ??= chrome; break;
+                    case UiButtonId.Home: homeButton ??= chrome; break;
+                    case UiButtonId.Settings: settingsButton ??= chrome; break;
+                    case UiButtonId.AlwaysOnTop: alwaysOnTopButton ??= chrome; break;
+                    case UiButtonId.AcceptWant:
+                    case UiButtonId.SnoozeWant:
+                    case UiButtonId.Adopt:
+                    case UiButtonId.CollectAll:
+                    case UiButtonId.PauseTime:
+                    case UiButtonId.Inventory:
+                    case UiButtonId.Back:
+                        UiComingSoon.Apply(chrome, "Coming soon");
+                        break;
+                }
+            }
+
             WireButtons();
         }
 
@@ -325,6 +415,9 @@ namespace PolyPets.UI
             BindButton(decorateButton, OnDecorateClicked);
             BindButton(prevRoomButton, OnPrevRoom);
             BindButton(nextRoomButton, OnNextRoom);
+            BindButton(homeButton, OnHomeClicked);
+            BindButton(settingsButton, OnSettingsClicked);
+            BindButton(alwaysOnTopButton, OnAlwaysOnTopClicked);
         }
     }
 }

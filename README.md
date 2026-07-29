@@ -9,6 +9,7 @@ Care for box-headed pets, earn currency, buy rooms, and play short minigames in 
 
 ## Docs
 
+- **[Startup Sanity](docs/STARTUP_SANITY.md)** — playable checklist after First-Time Setup
 - **[Studio Branding](docs/STUDIO_BRANDING.md)** — 633 Games marks & Player Settings
 - **[Game Design Document](docs/GAME_DESIGN_DOCUMENT.md)** — vision, loop, pets, rooms, minigames
 - **[Unity Setup](docs/UNITY_SETUP.md)** — Unity 6.3 project, cel/post, day-night, bootstrap
@@ -37,6 +38,7 @@ git checkout cursor/minigame-baselines-da80   # until merged to main
 2. *(Recommended)* Import **Feel** from the Asset Store / Package Manager first.
 3. Wait for packages + compile.
 4. Menu: **`PolyPets → ★ First-Time Setup (run this)`**
-5. Press **Play** at **480×720**.
+5. Optional: **`PolyPets → ★ Startup Sanity Check`**
+6. Press **Play** at **480×720**.
 
 © 633 Games

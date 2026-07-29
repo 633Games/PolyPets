@@ -253,8 +253,7 @@ namespace PolyPets.EditorTools
             label.fontSize = 16;
             label.color = pack.labelColor;
             label.raycastTarget = false;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                         ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.font = UiFonts.Body;
 
             var chrome = root.GetComponent<UiChromeButton>();
             var so = new SerializedObject(chrome);
@@ -334,7 +333,7 @@ namespace PolyPets.EditorTools
             img.sprite = pack.panelBackground;
             img.color = new Color(1f, 1f, 1f, 0.85f);
 
-            float[] xs = { 0.12f, 0.30f, 0.48f, 0.66f, 0.84f };
+            float[] xs = { 0.10f, 0.28f, 0.46f, 0.64f, 0.82f };
             UiButtonId[] ids = { UiButtonId.Feed, UiButtonId.Play, UiButtonId.Clean, UiButtonId.Shop, UiButtonId.Home };
             for (int i = 0; i < ids.Length; i++)
                 PlaceButtonPrefab(root.transform, ids[i], new Vector2(xs[i], 0.5f), new Vector2(84f, 48f));
@@ -413,8 +412,7 @@ namespace PolyPets.EditorTools
             text.alignment = align;
             text.color = color;
             text.raycastTarget = false;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                        ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = UiFonts.Body;
             return text;
         }
     }
