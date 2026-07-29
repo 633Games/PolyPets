@@ -13,15 +13,17 @@ namespace PolyPets.Pets
         [SerializeField] private bool useMainCamera = true;
 
         [Header("Limits (degrees from rest pose)")]
-        [SerializeField] private float maxYaw = 42f;
-        [SerializeField] private float maxPitch = 22f;
-        [SerializeField] private float minPitch = -16f;
+        [SerializeField] private float maxYaw = 48f;
+        [SerializeField] private float maxPitch = 28f;
+        [SerializeField] private float minPitch = -36f;
 
         [Header("Feel")]
         [SerializeField] private float turnSpeed = 8f;
         [SerializeField] private float mousePlaneBias = 0.15f;
         [SerializeField] private bool lookWhenMouseOffPet = true;
         [SerializeField] private float maxLookDistance = 8f;
+        [Tooltip("0 = horizontal floor plane; 1 = camera-facing plane (much easier to look up/down).")]
+        [SerializeField] [Range(0f, 1f)] private float cameraFacingLookPlane = 0.85f;
 
         private Quaternion _restLocal;
         private bool _hasRest;
@@ -47,7 +49,17 @@ namespace PolyPets.Pets
             head = headBone;
             if (cam != null)
                 viewCamera = cam;
+            ApplyComfortableLookRange();
             CaptureRestPose();
+        }
+
+        /// <summary>Widen pitch so pets can glance up at the cursor more freely.</summary>
+        public void ApplyComfortableLookRange()
+        {
+            maxYaw = Mathf.Max(maxYaw, 48f);
+            maxPitch = Mathf.Max(maxPitch, 28f);
+            minPitch = Mathf.Min(minPitch, -36f);
+            cameraFacingLookPlane = Mathf.Max(cameraFacingLookPlane, 0.85f);
         }
 
         private void LateUpdate()
@@ -119,16 +131,23 @@ namespace PolyPets.Pets
             }
 
             Ray ray = cam.ScreenPointToRay(mouse);
-            float planeY = head.position.y + mousePlaneBias;
-            var plane = new Plane(Vector3.up, new Vector3(0f, planeY, 0f));
-            if (!plane.Raycast(ray, out float enter))
+            Vector3 floorPoint = head.position + Vector3.up * mousePlaneBias;
+            var floorPlane = new Plane(Vector3.up, floorPoint);
+            var camPlane = new Plane(-cam.transform.forward, head.position);
+
+            bool hitFloor = floorPlane.Raycast(ray, out float enterFloor);
+            bool hitCam = camPlane.Raycast(ray, out float enterCam);
+
+            if (!hitFloor && !hitCam)
             {
-                // Fallback: point ahead of camera ray near the pet.
                 worldPoint = ray.origin + ray.direction * Vector3.Distance(cam.transform.position, head.position);
                 return true;
             }
 
-            worldPoint = ray.GetPoint(enter);
+            Vector3 fromFloor = hitFloor ? ray.GetPoint(enterFloor) : head.position;
+            Vector3 fromCam = hitCam ? ray.GetPoint(enterCam) : head.position;
+            worldPoint = Vector3.Lerp(fromFloor, fromCam, cameraFacingLookPlane);
+
             Vector3 offset = worldPoint - head.position;
             if (offset.sqrMagnitude > maxLookDistance * maxLookDistance)
                 worldPoint = head.position + offset.normalized * maxLookDistance;

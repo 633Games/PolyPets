@@ -17,3 +17,15 @@ License: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
 Please credit **game-icons.net** (and authors where practical) in your game credits.
 
 Icons were downloaded as white-on-transparent PNG (512×512) and renamed for PolyPets button slots.
+
+### Fishing rod states (`GameIconsNet/Fishing/`)
+
+Three minigame icons for cat fishing, based on Delapouite **fishing-pole** from [game-icons.net](https://game-icons.net/1x1/delapouite/fishing-pole.html) (CC BY 3.0):
+
+| File | State |
+|------|--------|
+| `rod_idle.png` | Fishing pole (no hanging line) |
+| `rod_waiting.png` | Full fishing-pole with line + hook |
+| `rod_caught.png` | Pole + Delapouite **tropical-fish** on the line |
+
+Runtime copies: `Assets/Resources/Minigames/Fishing/`.

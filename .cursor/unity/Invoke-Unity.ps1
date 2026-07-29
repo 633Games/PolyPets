@@ -13,12 +13,25 @@
   .\Invoke-Unity.ps1 log -Limit 30 -Filter CareHud
   .\Invoke-Unity.ps1 exec -Menu "PolyPets/UI/Apply Cozy Companion HUD"
   .\Invoke-Unity.ps1 get-component -Name CareHud -Type CareHudController
+  .\Invoke-Unity.ps1 screenshot -View game
+  .\Invoke-Unity.ps1 screenshot -View scene -Path house_scene
+  .\Invoke-Unity.ps1 click -X 240 -Y 360
+  .\Invoke-Unity.ps1 click -X 0.5 -Y 0.5 -Normalized
+  .\Invoke-Unity.ps1 focus -View game
+  .\Invoke-Unity.ps1 select -Name CareHud
+  .\Invoke-Unity.ps1 gameview
   .\Invoke-Unity.ps1 menus
 #>
 [CmdletBinding()]
 param(
     [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet("ping", "status", "hierarchy", "find", "log", "exec", "get-component", "component", "menus")]
+    [ValidateSet(
+        "ping", "status", "hierarchy", "find", "log", "exec",
+        "get-component", "component", "menus",
+        "screenshot", "capture", "click", "tap", "press", "invoke", "focus", "select", "gameview", "game-view",
+        "play", "set-gameview", "gameview-set", "rebuild-hud", "rebuildhud",
+        "refresh", "reimport"
+    )]
     [string]$Command,
 
     [string]$Name = "",
@@ -27,6 +40,14 @@ param(
     [string]$Component = "",
     [string]$Filter = "",
     [string]$Menu = "",
+    [ValidateSet("", "game", "scene", "both", "ui", "world", "auto", "window", "camera", "desktop")]
+    [string]$View = "",
+    [string]$Path = "",
+    [double]$X = 0,
+    [double]$Y = 0,
+    [switch]$Normalized,
+    [ValidateSet("", "topleft", "bottomleft")]
+    [string]$Origin = "",
     [int]$Depth = 0,
     [int]$Limit = 0,
     [int]$TimeoutSec = 20,
@@ -70,21 +91,53 @@ catch {
 
 $id = [guid]::NewGuid().ToString("N").Substring(0, 12)
 $cmdName = $Command
-if ($cmdName -eq "status") { $cmdName = "ping" }
-if ($cmdName -eq "component") { $cmdName = "get-component" }
+switch ($cmdName) {
+    "status" { $cmdName = "ping" }
+    "component" { $cmdName = "get-component" }
+    "capture" { $cmdName = "screenshot" }
+    "tap" { $cmdName = "click" }
+    "invoke" { $cmdName = "press" }
+    "game-view" { $cmdName = "gameview" }
+    "gameview-set" { $cmdName = "set-gameview" }
+    "rebuildhud" { $cmdName = "rebuild-hud" }
+    "reimport" { $cmdName = "refresh" }
+}
+
+# Screenshots (esp. play-mode Game View) may need an extra frame
+if ($cmdName -eq "screenshot" -and $TimeoutSec -lt 45) {
+    $TimeoutSec = 45
+}
+
+$filterValue = $Filter
+if ($Origin -eq "topleft" -and -not $filterValue) {
+    $filterValue = "topleft"
+}
+
+$viewValue = $View
+if (-not $viewValue -and $cmdName -eq "screenshot") {
+    $viewValue = "game"
+}
+if (-not $viewValue -and $cmdName -eq "focus") {
+    $viewValue = "game"
+}
 
 # Flat envelope for Unity JsonUtility
 $payload = [ordered]@{
-    id   = $id
-    cmd  = $cmdName
-    name = $(if ($Name) { $Name } elseif ($Query) { $Query } else { "" })
-    query = $Query
-    type = $(if ($Type) { $Type } elseif ($Component) { $Component } else { "" })
-    component = $Component
-    filter = $Filter
-    menu = $Menu
-    depth = $Depth
-    limit = $Limit
+    id         = $id
+    cmd        = $cmdName
+    name       = $(if ($Name) { $Name } elseif ($Query) { $Query } else { "" })
+    query      = $Query
+    type       = $(if ($Type) { $Type } elseif ($Component) { $Component } else { "" })
+    component  = $Component
+    filter     = $filterValue
+    menu       = $Menu
+    view       = $viewValue
+    path       = $Path
+    depth      = $Depth
+    limit      = $Limit
+    x          = [float]$X
+    y          = [float]$Y
+    normalized = $(if ($Normalized) { 1 } else { 0 })
 }
 
 $json = ($payload | ConvertTo-Json -Compress)

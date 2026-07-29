@@ -56,20 +56,25 @@ namespace PolyPets.UI
             {
                 if (spritePack.buttonBackground != null)
                     background.sprite = spritePack.buttonBackground;
-                background.color = useDangerColor ? spritePack.dangerColor : Color.white;
+                background.color = useDangerColor ? spritePack.dangerColor : background.color;
+                if (background.color.a < 0.01f)
+                    background.color = Color.white;
             }
 
             if (icon != null)
             {
                 var spr = spritePack.GetIcon(buttonId);
                 icon.enabled = spr != null;
-                icon.sprite = spr;
+                if (spr != null)
+                    icon.sprite = spr;
                 icon.color = spritePack.accentColor;
             }
 
             if (label != null)
             {
-                label.text = spritePack.GetLabel(buttonId);
+                var packedLabel = spritePack.GetLabel(buttonId);
+                if (!string.IsNullOrEmpty(packedLabel))
+                    label.text = packedLabel;
                 label.color = spritePack.labelColor;
             }
 

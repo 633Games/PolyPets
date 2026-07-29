@@ -64,6 +64,22 @@ namespace PolyPets.EditorTools
                 "Nice");
         }
 
+        /// <summary>No dialogs — safe for Cursor bridge / automation.</summary>
+        [MenuItem("PolyPets/UI/Apply Cozy Companion HUD (Silent)", priority = -49)]
+        public static void ApplyCozyHudSilentMenu()
+        {
+            if (!ApplyCozyHudToOpenScene())
+            {
+                Debug.LogWarning("[PolyPets] Silent cozy HUD apply failed (missing scene roots).");
+                return;
+            }
+
+            var scene = EditorSceneManager.GetActiveScene();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[PolyPets] Cozy HUD applied (silent) and scene saved.");
+        }
+
         /// <summary>
         /// Batchmode-safe entry: open Living Room if needed, rebuild cozy HUD, save scene.
         /// No DisplayDialog — safe for -executeMethod / -batchmode.
@@ -162,6 +178,16 @@ namespace PolyPets.EditorTools
             EnsureCozySpritesOnDisk();
             var pack = UiPrefabFactory.BuildUiPrefabKit(showDialog: false);
             VendorSpritePackApplier.ApplyVendorSprites(showDialog: false);
+            // Keep Kenney icons/labels, drop loud yellow chrome so dock stays readable
+            if (pack != null)
+            {
+                pack.buttonBackground = null;
+                pack.buttonBackgroundPressed = null;
+                pack.buttonBackgroundDisabled = null;
+                pack.labelColor = CozyUiTheme.Cocoa;
+                pack.accentColor = CozyUiTheme.Cocoa;
+                EditorUtility.SetDirty(pack);
+            }
 
             // Clear old UI children but keep the root.
             for (int i = uiRoot.transform.childCount - 1; i >= 0; i--)
@@ -231,7 +257,8 @@ namespace PolyPets.EditorTools
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(480, 720);
-            scaler.matchWidthOrHeight = 1f;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f; // balanced for portrait desk window
             canvasGo.AddComponent<GraphicRaycaster>();
 
             var hudRoot = canvasGo.AddComponent<UiHudRoot>();
@@ -250,49 +277,50 @@ namespace PolyPets.EditorTools
             Sprite bowlIcon = LoadSprite(BowlIconPath);
             Sprite moodIcon = LoadSprite(MoodIconPath);
 
-            // Top-left coin chip
+            // Top-left coin chip — roomy for fat-finger desk play
             var coinChip = CreatePanel(canvasGo.transform, "CoinChip", new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(16f, -16f), new Vector2(118f, 44f), panel, CozyUiTheme.Parchment);
+                new Vector2(14f, -14f), new Vector2(132f, 48f), panel, CozyUiTheme.Parchment);
             coinChip.GetComponent<RectTransform>().pivot = new Vector2(0f, 1f);
             var coinLabel = CreateText(coinChip.transform, "CoinText", "✦ 0",
-                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, TextAnchor.MiddleCenter, 18, CozyUiTheme.Cocoa);
-            Stretch(coinLabel.rectTransform, 8f);
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, TextAnchor.MiddleCenter, 20, CozyUiTheme.Cocoa);
+            Stretch(coinLabel.rectTransform, 10f);
 
             // Top-right room / clock chip
             var roomChip = CreatePanel(canvasGo.transform, "RoomChip", new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-16f, -16f), new Vector2(176f, 52f), panel, CozyUiTheme.Parchment);
+                new Vector2(-14f, -14f), new Vector2(188f, 56f), panel, CozyUiTheme.Parchment);
             roomChip.GetComponent<RectTransform>().pivot = new Vector2(1f, 1f);
             var roomLabel = CreateText(roomChip.transform, "RoomText", roomName,
-                new Vector2(0.5f, 0.62f), new Vector2(0.5f, 0.62f), Vector2.zero, new Vector2(160f, 22f),
-                TextAnchor.MiddleCenter, 15, CozyUiTheme.Cocoa);
+                new Vector2(0.5f, 0.64f), new Vector2(0.5f, 0.64f), Vector2.zero, new Vector2(168f, 24f),
+                TextAnchor.MiddleCenter, 16, CozyUiTheme.Cocoa);
             var clockLabel = CreateText(roomChip.transform, "ClockText", "08:24 · daylight",
-                new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(160f, 18f),
-                TextAnchor.MiddleCenter, 11, CozyUiTheme.CocoaMuted);
+                new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(168f, 20f),
+                TextAnchor.MiddleCenter, 13, CozyUiTheme.CocoaMuted);
 
-            // Needs: two radial pies (bowl + mood) — no numeric tummy/mood labels
+            // Needs card: stock → meters → status, evenly spaced
             var needsCard = CreatePanel(canvasGo.transform, "NeedsCard", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -72f), new Vector2(220f, 108f), panel, CozyUiTheme.CreamChip);
+                new Vector2(0f, -78f), new Vector2(248f, 128f), panel, CozyUiTheme.CreamChip);
+            needsCard.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 1f);
+            var foodLabel = CreateText(needsCard.transform, "FoodStockText", "Treats ×0",
+                new Vector2(0.5f, 0.90f), new Vector2(0.5f, 0.90f), Vector2.zero, new Vector2(220f, 20f),
+                TextAnchor.MiddleCenter, 13, CozyUiTheme.CocoaMuted);
             var hungerMeter = BuildRadialMeter(
-                needsCard.transform, "HungerMeter", CozyUiTheme.Amber,
-                new Vector2(0.28f, 0.58f), circleTrack, circleFill, bowlIcon);
+                needsCard.transform, "HungerMeter", CozyUiTheme.Honey,
+                new Vector2(0.30f, 0.48f), circleTrack, circleFill, bowlIcon);
             var happyMeter = BuildRadialMeter(
                 needsCard.transform, "HappyMeter", CozyUiTheme.Blush,
-                new Vector2(0.72f, 0.58f), circleTrack, circleFill, moodIcon);
+                new Vector2(0.70f, 0.48f), circleTrack, circleFill, moodIcon);
             var statusLabel = CreateText(needsCard.transform, "StatusText", "Settling in…",
-                new Vector2(0.5f, 0.12f), new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(200f, 20f),
-                TextAnchor.MiddleCenter, 12, CozyUiTheme.CocoaSoft);
-            var foodLabel = CreateText(needsCard.transform, "FoodStockText", "Treats ×0",
-                new Vector2(0.5f, 0.92f), new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(180f, 16f),
-                TextAnchor.MiddleCenter, 11, CozyUiTheme.CocoaMuted);
+                new Vector2(0.5f, 0.12f), new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(220f, 22f),
+                TextAnchor.MiddleCenter, 14, CozyUiTheme.CocoaSoft);
 
-            // Floating action dock
+            // Floating action dock — larger hit targets, even spacing
             var dock = CreatePanel(canvasGo.transform, "ActionDock", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 18f), new Vector2(360f, 92f), panel, CozyUiTheme.Parchment);
+                new Vector2(0f, 22f), new Vector2(392f, 110f), panel, CozyUiTheme.Parchment);
             dock.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 0f);
 
-            var feedBtn = CreateDockButton(dock.transform, UiButtonId.Feed, spritePack, pill, new Vector2(0.2f, 0.55f));
-            var playBtn = CreateDockButton(dock.transform, UiButtonId.Play, spritePack, pill, new Vector2(0.5f, 0.55f));
-            var shopBtn = CreateDockButton(dock.transform, UiButtonId.Shop, spritePack, pill, new Vector2(0.8f, 0.55f));
+            var feedBtn = CreateDockButton(dock.transform, UiButtonId.Feed, spritePack, pill, new Vector2(0.18f, 0.52f));
+            var playBtn = CreateDockButton(dock.transform, UiButtonId.Play, spritePack, pill, new Vector2(0.50f, 0.52f));
+            var shopBtn = CreateDockButton(dock.transform, UiButtonId.Shop, spritePack, pill, new Vector2(0.82f, 0.52f));
 
             var so = new SerializedObject(hud);
             so.FindProperty("coinText").objectReferenceValue = coinLabel;
@@ -334,29 +362,43 @@ namespace PolyPets.EditorTools
                 Vector2.zero, Vector2.zero, null, CozyUiTheme.OverlayDim);
             Stretch(dim.GetComponent<RectTransform>(), 0f);
             dim.GetComponent<Image>().raycastTarget = true;
+            var dimBtn = dim.AddComponent<Button>();
+            dimBtn.transition = Selectable.Transition.None;
 
             var panel = CreatePanel(shopGo.transform, "ShopPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 Vector2.zero, new Vector2(400f, 460f), panelSprite, CozyUiTheme.ParchmentSolid);
 
             var title = CreateText(panel.transform, "Title", "Little pantry",
                 new Vector2(0.5f, 0.92f), new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(340f, 34f),
-                TextAnchor.MiddleCenter, 22, CozyUiTheme.Cocoa);
+                TextAnchor.MiddleCenter, 24, CozyUiTheme.Cocoa);
             var body = CreateText(panel.transform, "Body", "Pick a treat",
                 new Vector2(0.5f, 0.82f), new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(340f, 48f),
-                TextAnchor.UpperCenter, 13, CozyUiTheme.CocoaSoft);
+                TextAnchor.UpperCenter, 15, CozyUiTheme.CocoaSoft);
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             var buttonRoot = new GameObject("Rows", typeof(RectTransform));
             buttonRoot.transform.SetParent(panel.transform, false);
-            Stretch(buttonRoot.GetComponent<RectTransform>(), 0f);
+            var rowsRt = buttonRoot.GetComponent<RectTransform>();
+            rowsRt.anchorMin = new Vector2(0f, 0.18f);
+            rowsRt.anchorMax = new Vector2(1f, 0.78f);
+            rowsRt.offsetMin = Vector2.zero;
+            rowsRt.offsetMax = Vector2.zero;
 
-            var close = CreateSoftButton(panel.transform, "Close", "All set", new Vector2(0.5f, 0.08f), new Vector2(140f, 44f));
-            shop.Bind(shopGo, title, body, buttonRoot.transform, close, inventory, economy, house);
+            var close = CreateSoftButton(panel.transform, "Close", "All set", new Vector2(0.5f, 0.08f), new Vector2(160f, 48f));
+            shop.Bind(shopGo, title, body, buttonRoot.transform, close, inventory, economy, house, dimBtn);
+            var shopSo = new SerializedObject(shop);
+            shopSo.FindProperty("root").objectReferenceValue = shopGo;
+            shopSo.FindProperty("titleText").objectReferenceValue = title;
+            shopSo.FindProperty("bodyText").objectReferenceValue = body;
+            shopSo.FindProperty("buttonRoot").objectReferenceValue = buttonRoot.transform;
+            shopSo.FindProperty("closeButton").objectReferenceValue = close;
+            shopSo.FindProperty("dimmerButton").objectReferenceValue = dimBtn;
+            shopSo.FindProperty("inventory").objectReferenceValue = inventory;
+            shopSo.FindProperty("economy").objectReferenceValue = economy;
+            shopSo.FindProperty("house").objectReferenceValue = house;
+            shopSo.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(shop);
             shopGo.SetActive(false);
-
-            var dimBtn = dim.AddComponent<Button>();
-            dimBtn.transition = Selectable.Transition.None;
-            dimBtn.onClick.AddListener(shop.Hide);
 
             return shop;
         }
@@ -415,20 +457,26 @@ namespace PolyPets.EditorTools
             Sprite panel = LoadSprite(PanelSpritePath);
 
             var root = CreatePanel(canvas, "MinigameOverlay", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(420f, 340f), panel, CozyUiTheme.ParchmentSolid);
+                Vector2.zero, new Vector2(440f, 520f), panel, CozyUiTheme.ParchmentSolid);
             root.SetActive(false);
 
             var prompt = CreateText(root.transform, "Prompt", "Let's play",
-                new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(380f, 220f),
-                TextAnchor.UpperCenter, 15, CozyUiTheme.Cocoa);
+                new Vector2(0.5f, 0.94f), new Vector2(0.5f, 0.94f), Vector2.zero, new Vector2(400f, 40f),
+                TextAnchor.MiddleCenter, 16, CozyUiTheme.Cocoa);
             prompt.horizontalOverflow = HorizontalWrapMode.Wrap;
             prompt.verticalOverflow = VerticalWrapMode.Overflow;
 
             var score = CreateText(root.transform, "Score", "✦ 0",
-                new Vector2(0.5f, 0.1f), new Vector2(0.5f, 0.1f), Vector2.zero, new Vector2(340f, 28f),
-                TextAnchor.MiddleCenter, 16, CozyUiTheme.Amber);
+                new Vector2(0.5f, 0.02f), new Vector2(0.5f, 0.02f), Vector2.zero, new Vector2(340f, 22f),
+                TextAnchor.MiddleCenter, 15, CozyUiTheme.Amber);
 
             hud.Bind(prompt, score, root);
+            var hudSo = new SerializedObject(hud);
+            hudSo.FindProperty("promptText").objectReferenceValue = prompt;
+            hudSo.FindProperty("scoreText").objectReferenceValue = score;
+            hudSo.FindProperty("root").objectReferenceValue = root;
+            hudSo.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(hud);
         }
 
         public static void BuildTutorialPanel(
@@ -445,16 +493,16 @@ namespace PolyPets.EditorTools
             Sprite pill = LoadSprite(PillSpritePath);
 
             var root = CreatePanel(canvas, "TutorialPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, new Vector2(420f, 480f), panel, CozyUiTheme.ParchmentSolid);
+                Vector2.zero, new Vector2(400f, 420f), panel, CozyUiTheme.ParchmentSolid);
 
             var title = CreateText(root.transform, "Title", "Welcome home",
-                new Vector2(0.5f, 0.9f), new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(360f, 40f),
-                TextAnchor.MiddleCenter, 24, CozyUiTheme.Cocoa);
+                new Vector2(0.5f, 0.88f), new Vector2(0.5f, 0.88f), Vector2.zero, new Vector2(340f, 40f),
+                TextAnchor.MiddleCenter, 26, CozyUiTheme.Cocoa);
 
             var body = CreateText(root.transform, "Body",
                 "A tiny desk window for a box-headed pal.\nName them, pick a friend, then keep them cozy.",
-                new Vector2(0.5f, 0.7f), new Vector2(0.5f, 0.7f), Vector2.zero, new Vector2(350f, 120f),
-                TextAnchor.UpperCenter, 15, CozyUiTheme.CocoaSoft);
+                new Vector2(0.5f, 0.66f), new Vector2(0.5f, 0.66f), Vector2.zero, new Vector2(340f, 110f),
+                TextAnchor.UpperCenter, 16, CozyUiTheme.CocoaSoft);
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -493,15 +541,17 @@ namespace PolyPets.EditorTools
             inputGo.SetActive(false);
 
             var next = CreateSoftButton(root.transform, "NextButton", "Let's settle in", new Vector2(0.5f, 0.16f), new Vector2(200f, 48f));
-            var cat = CreateSoftButton(root.transform, "Btn_Cat", "Cat\nFishing", new Vector2(0.2f, 0.24f), new Vector2(110f, 78f));
-            var dog = CreateSoftButton(root.transform, "Btn_Dog", "Dog\nDig + Snap", new Vector2(0.5f, 0.24f), new Vector2(110f, 78f));
-            var rabbit = CreateSoftButton(root.transform, "Btn_Rabbit", "Rabbit\nCarrots", new Vector2(0.8f, 0.24f), new Vector2(110f, 78f));
+            var cat = CreateSoftButton(root.transform, "Btn_Cat", "Cat\nFishing", new Vector2(0.2f, 0.32f), new Vector2(120f, 84f));
+            var dog = CreateSoftButton(root.transform, "Btn_Dog", "Dog\nDig + Snap", new Vector2(0.5f, 0.32f), new Vector2(120f, 84f));
+            var rabbit = CreateSoftButton(root.transform, "Btn_Rabbit", "Rabbit\nCarrots", new Vector2(0.8f, 0.32f), new Vector2(120f, 84f));
             cat.gameObject.SetActive(false);
             dog.gameObject.SetActive(false);
             rabbit.gameObject.SetActive(false);
 
             var nextLabel = next.GetComponentInChildren<Text>();
-            tutorial.BindUi(root, title, body, input, next, nextLabel, cat, dog, rabbit);
+            var needs = canvas.Find("NeedsCard")?.gameObject;
+            var dock = canvas.Find("ActionDock")?.gameObject;
+            tutorial.BindUi(root, title, body, input, next, nextLabel, cat, dog, rabbit, needs, dock);
             tutorial.BindWorld(charactersRoot, room, router, pets.cat, pets.dog, pets.rabbit, palette);
             root.transform.SetAsLastSibling();
         }
@@ -515,7 +565,7 @@ namespace PolyPets.EditorTools
             Sprite fillSprite,
             Sprite iconSprite)
         {
-            const float pieSize = 64f;
+            const float pieSize = 76f;
 
             var go = new GameObject(name, typeof(RectTransform), typeof(NeedMeterView));
             go.transform.SetParent(parent, false);
@@ -551,12 +601,12 @@ namespace PolyPets.EditorTools
             icon.transform.SetParent(go.transform, false);
             var iconRt = icon.GetComponent<RectTransform>();
             iconRt.anchorMin = iconRt.anchorMax = new Vector2(0.5f, 0.5f);
-            iconRt.sizeDelta = new Vector2(28f, 28f);
+            iconRt.sizeDelta = new Vector2(32f, 32f);
             var iconImg = icon.GetComponent<Image>();
             iconImg.sprite = iconSprite;
             iconImg.type = Image.Type.Simple;
             iconImg.preserveAspect = true;
-            iconImg.color = CozyUiTheme.Cocoa;
+            iconImg.color = CozyUiTheme.CocoaSoft;
             iconImg.raycastTarget = false;
 
             var meter = go.GetComponent<NeedMeterView>();
@@ -571,7 +621,7 @@ namespace PolyPets.EditorTools
             go.transform.SetParent(parent, false);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = anchor;
-            rt.sizeDelta = new Vector2(96f, 64f);
+            rt.sizeDelta = new Vector2(112f, 84f);
 
             var bg = go.GetComponent<Image>();
             bg.sprite = pill;
@@ -581,25 +631,26 @@ namespace PolyPets.EditorTools
             var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             iconGo.transform.SetParent(go.transform, false);
             var iconRt = iconGo.GetComponent<RectTransform>();
-            iconRt.anchorMin = iconRt.anchorMax = new Vector2(0.5f, 0.62f);
-            iconRt.sizeDelta = new Vector2(28f, 28f);
+            iconRt.anchorMin = iconRt.anchorMax = new Vector2(0.5f, 0.66f);
+            iconRt.sizeDelta = new Vector2(36f, 36f);
             var icon = iconGo.GetComponent<Image>();
             icon.sprite = pack != null ? pack.GetIcon(id) : null;
             icon.preserveAspect = true;
             icon.raycastTarget = false;
-            icon.color = CozyUiTheme.Amber;
+            icon.color = CozyUiTheme.Cocoa;
 
             var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
             labelGo.transform.SetParent(go.transform, false);
             var labelRt = labelGo.GetComponent<RectTransform>();
-            labelRt.anchorMin = new Vector2(0f, 0f);
-            labelRt.anchorMax = new Vector2(1f, 0.42f);
+            labelRt.anchorMin = new Vector2(0.06f, 0.04f);
+            labelRt.anchorMax = new Vector2(0.94f, 0.42f);
             labelRt.offsetMin = Vector2.zero;
             labelRt.offsetMax = Vector2.zero;
             var label = labelGo.GetComponent<Text>();
             label.text = pack != null ? pack.GetLabel(id) : id.ToString();
             label.alignment = TextAnchor.MiddleCenter;
-            label.fontSize = 13;
+            label.fontSize = 18;
+            label.fontStyle = FontStyle.Bold;
             label.color = CozyUiTheme.Cocoa;
             label.font = CozyUiTheme.UiFont;
             label.raycastTarget = false;
@@ -614,10 +665,18 @@ namespace PolyPets.EditorTools
             so.FindProperty("applyFeelPop").boolValue = true;
             so.ApplyModifiedPropertiesWithoutUndo();
             chrome.ApplyPack();
-            // Keep parchment tint after pack apply
-            bg.color = Color.white;
-            if (label != null) label.color = CozyUiTheme.Cocoa;
-            if (icon != null) icon.color = CozyUiTheme.Amber;
+            // High-contrast cozy dock: solid parchment + cocoa ink (ignore loud vendor chrome)
+            bg.sprite = pill;
+            bg.type = Image.Type.Sliced;
+            bg.color = CozyUiTheme.ParchmentSolid;
+            if (label != null)
+            {
+                label.color = CozyUiTheme.Cocoa;
+                label.fontSize = 18;
+                label.fontStyle = FontStyle.Bold;
+            }
+            if (icon != null)
+                icon.color = CozyUiTheme.Cocoa;
 
             return chrome;
         }
@@ -635,10 +694,11 @@ namespace PolyPets.EditorTools
             var img = go.GetComponent<Image>();
             img.sprite = pill;
             img.type = Image.Type.Sliced;
-            img.color = Color.white;
+            img.color = CozyUiTheme.CreamChip;
+            img.raycastTarget = true;
 
             var text = CreateText(go.transform, "Label", label, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, size - new Vector2(12f, 10f), TextAnchor.MiddleCenter, 14, CozyUiTheme.Cocoa);
+                Vector2.zero, size - new Vector2(12f, 10f), TextAnchor.MiddleCenter, 16, CozyUiTheme.Cocoa);
             text.raycastTarget = false;
             return go.GetComponent<Button>();
         }
@@ -710,12 +770,11 @@ namespace PolyPets.EditorTools
             CreateFolder("Assets/Art", "UI");
             CreateFolder("Assets/Art/UI", "Cozy");
 
-            // Larger source + moderate radius so 9-slice keeps soft chamfers when stretched
-            // (old 96×32 pills pinched to points on 64px-tall dock buttons).
-            WriteRoundedPng(PanelSpritePath, 128, 22, CozyUiTheme.ParchmentSolid, new Color(0.78f, 0.7f, 0.58f, 0.55f), 3, force: true);
-            WriteRoundedPng(ChipSpritePath, 96, 18, Color.white, new Color(0.82f, 0.74f, 0.64f, 0.7f), 2, force: true);
-            WriteRoundedPng(ButtonSpritePath, 96, 18, Color.white, new Color(0.85f, 0.72f, 0.52f, 0.8f), 2, force: true);
-            WriteRoundedPng(PillSpritePath, 128, 24, Color.white, new Color(0.86f, 0.74f, 0.55f, 0.75f), 3, force: true);
+            // Larger source + soft borders so 9-slice stays friendly when stretched
+            WriteRoundedPng(PanelSpritePath, 128, 24, CozyUiTheme.ParchmentSolid, CozyUiTheme.BorderSoft, 2, force: true);
+            WriteRoundedPng(ChipSpritePath, 96, 20, Color.white, CozyUiTheme.BorderSoft, 2, force: true);
+            WriteRoundedPng(ButtonSpritePath, 96, 20, Color.white, new Color(0.82f, 0.70f, 0.52f, 0.55f), 2, force: true);
+            WriteRoundedPng(PillSpritePath, 128, 28, Color.white, new Color(0.84f, 0.72f, 0.56f, 0.50f), 2, force: true);
 
             WriteGeneratedSprite(CircleFillPath, () => CozyUiTheme.CreateCircleSprite(128, Color.white), sliced: false, force: true);
             WriteGeneratedSprite(CircleTrackPath, () => CozyUiTheme.CreateCircleSprite(128, CozyUiTheme.MeterTrack), sliced: false, force: true);

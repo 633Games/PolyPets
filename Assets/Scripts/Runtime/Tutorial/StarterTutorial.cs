@@ -31,6 +31,7 @@ namespace PolyPets.Tutorial
         [SerializeField] private Button dogButton;
         [SerializeField] private Button rabbitButton;
         [SerializeField] private Text nextButtonLabel;
+        [SerializeField] private GameObject[] hideWhileOpen;
 
         [SerializeField] private Transform petParent;
         [SerializeField] private RoomRoot starterRoom;
@@ -60,7 +61,8 @@ namespace PolyPets.Tutorial
             Text nextLabel,
             Button cat,
             Button dog,
-            Button rabbit)
+            Button rabbit,
+            params GameObject[] chromeToHideWhileOpen)
         {
             panelRoot = root;
             titleText = title;
@@ -71,6 +73,7 @@ namespace PolyPets.Tutorial
             catButton = cat;
             dogButton = dog;
             rabbitButton = rabbit;
+            hideWhileOpen = chromeToHideWhileOpen;
         }
 
         public void BindWorld(
@@ -174,6 +177,7 @@ namespace PolyPets.Tutorial
             step = next;
             if (panelRoot != null)
                 panelRoot.SetActive(true);
+            SetChromeVisible(false);
 
             bool naming = next == Step.Name;
             bool choosing = next == Step.ChooseSpecies;
@@ -242,6 +246,18 @@ namespace PolyPets.Tutorial
         {
             if (panelRoot != null)
                 panelRoot.SetActive(false);
+            SetChromeVisible(true);
+        }
+
+        private void SetChromeVisible(bool visible)
+        {
+            if (hideWhileOpen == null)
+                return;
+            foreach (var go in hideWhileOpen)
+            {
+                if (go != null)
+                    go.SetActive(visible);
+            }
         }
     }
 }

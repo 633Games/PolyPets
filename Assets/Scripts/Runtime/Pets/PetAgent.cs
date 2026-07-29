@@ -60,6 +60,7 @@ namespace PolyPets.Pets
             if (look == null)
                 look = gameObject.AddComponent<PetMouseLook>();
             look.Bind(head);
+            look.ApplyComfortableLookRange();
         }
 
         public bool TryFeedFromInventory()

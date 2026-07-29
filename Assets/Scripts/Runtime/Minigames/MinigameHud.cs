@@ -4,13 +4,16 @@ using UnityEngine.UI;
 namespace PolyPets.Minigames
 {
     /// <summary>
-    /// Simple overlay text for minigame prompts (no scene dependency beyond a Text reference).
+    /// Simple overlay for minigame prompts + optional stage root for visuals.
     /// </summary>
     public sealed class MinigameHud : MonoBehaviour
     {
         [SerializeField] private Text promptText;
         [SerializeField] private Text scoreText;
         [SerializeField] private GameObject root;
+
+        public GameObject Root => root;
+        public Transform RootTransform => root != null ? root.transform : null;
 
         public void Bind(Text prompt, Text score, GameObject panelRoot)
         {

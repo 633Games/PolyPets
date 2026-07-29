@@ -19,7 +19,7 @@ Baselines and detailed rules: [`MINIGAME_BASELINES.md`](MINIGAME_BASELINES.md).
 
 | Pet | Minigame | How you earn |
 |-----|----------|--------------|
-| **Cat** | **Fishing** | AC nibbles → **BITE** → Stardew hold/release reel bar |
+| **Cat** | **Fishing** | **FISH** cast → wait for shake → timing bar appears → **CATCH** in the green zone (edges = chance) |
 | **Dog** | **Dig + Snap** | Dig garden; wrong holes fill in; Snap the pop |
 | **Rabbit** | **Carrot Farm** | WASD harvest ready carrots before they spoil |
 

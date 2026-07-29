@@ -5,15 +5,15 @@ Shader "PolyPets/CelShade"
         _BaseMap ("Albedo", 2D) = "white" {}
         _BaseColor ("Color", Color) = (1,1,1,1)
         _ShadeColor ("Shade Color", Color) = (0.45, 0.38, 0.42, 1)
-        _ShadeThreshold ("Shade Threshold", Range(0,1)) = 0.45
-        _ShadeSoftness ("Shade Softness", Range(0.001, 0.5)) = 0.06
+        _ShadeThreshold ("Shade Threshold", Range(0,1)) = 0.50
+        _ShadeSoftness ("Shade Softness", Range(0.001, 0.5)) = 0.02
         _SpecularSize ("Specular Size", Range(0.001, 1)) = 0.12
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
         _RimColor ("Rim Color", Color) = (0.75, 0.85, 1, 1)
         _RimPower ("Rim Power", Range(0.5, 8)) = 3.5
-        _RimStrength ("Rim Strength", Range(0, 1)) = 0.25
-        _OutlineColor ("Outline Color", Color) = (0.08, 0.06, 0.07, 1)
-        _OutlineWidth ("Outline Width", Range(0, 0.05)) = 0.012
+        _RimStrength ("Rim Strength", Range(0, 1)) = 0.28
+        _OutlineColor ("Outline Color", Color) = (0.06, 0.04, 0.05, 1)
+        _OutlineWidth ("Outline Width", Range(0, 0.05)) = 0.016
     }
 
     SubShader
@@ -172,7 +172,9 @@ Shader "PolyPets/CelShade"
                 half shadow = mainLight.shadowAttenuation * mainLight.distanceAttenuation;
                 half lit = NdotL * shadow;
 
-                half shadeMask = smoothstep(_ShadeThreshold - _ShadeSoftness, _ShadeThreshold + _ShadeSoftness, lit);
+                // Harder cel bands (toy silhouette) — tiny soften only
+                half soft = max(_ShadeSoftness, 0.008h);
+                half shadeMask = smoothstep(_ShadeThreshold - soft, _ShadeThreshold + soft, lit);
                 half3 shaded = lerp(_ShadeColor.rgb * albedo.rgb, albedo.rgb, shadeMask);
                 half3 color = shaded * mainLight.color;
 

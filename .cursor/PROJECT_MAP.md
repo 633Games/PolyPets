@@ -53,7 +53,9 @@ docs/                     # design + setup (source of truth for features)
 
 | Path | Role |
 |------|------|
-| `Assets/Scripts/Editor/CursorUnityBridge.cs` | Editor poller |
+| `Assets/Scripts/Editor/CursorUnityBridge.cs` | Editor poller (hierarchy, comps, menus, screenshot, click) |
+| `Assets/Scripts/Runtime/Debug/CursorUnityCaptureRunner.cs` | Play-mode Game View PNG capture |
 | `.cursor/unity/Invoke-Unity.ps1` | Cursor-facing CLI |
 | `.cursor/skills/unity-bridge/SKILL.md` | Agent instructions |
 | `.cursor/unity/status.json` | Heartbeat (gitignored) |
+| `.cursor/unity/captures/` | Screenshot PNGs (gitignored) |

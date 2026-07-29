@@ -20,6 +20,7 @@ namespace PolyPets.UI
         [SerializeField] private EconomyService economy;
         [SerializeField] private House.HouseController house;
         [SerializeField] private Button closeButton;
+        [SerializeField] private Button dimmerButton;
 
         private readonly System.Collections.Generic.List<Button> _spawned = new();
         private Sprite _rowSprite;
@@ -34,21 +35,49 @@ namespace PolyPets.UI
             Button close,
             FoodInventory inv,
             EconomyService eco,
-            House.HouseController houseController)
+            House.HouseController houseController,
+            Button dimmer = null)
         {
             root = panelRoot;
             titleText = title;
             bodyText = body;
             buttonRoot = buttonsParent;
             closeButton = close;
+            dimmerButton = dimmer;
             inventory = inv;
             economy = eco;
             house = houseController;
+            WireCloseButtons();
+        }
+
+        private void OnEnable() => WireCloseButtons();
+
+        private void WireCloseButtons()
+        {
+            if (closeButton == null && root != null)
+            {
+                var closeTf = root.transform.Find("ShopPanel/Close");
+                if (closeTf != null)
+                    closeButton = closeTf.GetComponent<Button>();
+            }
+
+            if (dimmerButton == null && root != null)
+            {
+                var dimTf = root.transform.Find("Dimmer");
+                if (dimTf != null)
+                    dimmerButton = dimTf.GetComponent<Button>();
+            }
 
             if (closeButton != null)
             {
-                closeButton.onClick.RemoveAllListeners();
+                closeButton.onClick.RemoveListener(Hide);
                 closeButton.onClick.AddListener(Hide);
+            }
+
+            if (dimmerButton != null)
+            {
+                dimmerButton.onClick.RemoveListener(Hide);
+                dimmerButton.onClick.AddListener(Hide);
             }
         }
 
@@ -60,6 +89,7 @@ namespace PolyPets.UI
 
         public void Show()
         {
+            WireCloseButtons();
             if (root != null)
                 root.SetActive(true);
             Rebuild();

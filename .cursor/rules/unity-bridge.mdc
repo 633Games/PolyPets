@@ -14,6 +14,8 @@ When inspecting or changing the live Unity editor for PolyPets:
    - `powershell -File .cursor/unity/Invoke-Unity.ps1 get-component -Name CareHud -Type CareHudController`
    - `powershell -File .cursor/unity/Invoke-Unity.ps1 log -Limit 25 -Filter Null`
    - `powershell -File .cursor/unity/Invoke-Unity.ps1 exec -Menu "PolyPets/UI/Apply Cozy Companion HUD"`
+ - `powershell -File .cursor/unity/Invoke-Unity.ps1 screenshot -View game` (or `scene` / `both`)
+ - `powershell -File .cursor/unity/Invoke-Unity.ps1 click -X 240 -Y 650 -Filter topleft` (Play Mode)
 3. Requires **Unity Editor open** on this project (`CursorUnityBridge` auto-starts). If `status.json` is missing, tell the user to open Unity.
-4. Outputs are capped JSON. Do not request full texture/scene dumps.
+4. Outputs are capped JSON. Screenshots go to `.cursor/unity/captures/` — Read the PNG path when you need visuals; do not dump full scene YAML / Editor.log.
 5. Prefer `get-component` to verify serialized refs (e.g. CareHudController buttons) over opening the scene asset.

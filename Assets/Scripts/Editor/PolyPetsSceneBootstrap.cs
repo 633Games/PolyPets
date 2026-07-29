@@ -305,13 +305,21 @@ namespace PolyPets.EditorTools
             if (mat.HasProperty("_ShadeColor"))
                 mat.SetColor("_ShadeColor", shade);
             if (mat.HasProperty("_ShadeThreshold"))
-                mat.SetFloat("_ShadeThreshold", 0.45f);
+                mat.SetFloat("_ShadeThreshold", 0.50f);
             if (mat.HasProperty("_ShadeSoftness"))
-                mat.SetFloat("_ShadeSoftness", 0.05f);
+                mat.SetFloat("_ShadeSoftness", 0.02f);
             if (mat.HasProperty("_OutlineWidth"))
-                mat.SetFloat("_OutlineWidth", outline);
+                mat.SetFloat("_OutlineWidth", Mathf.Max(outline * 1.45f, 0.012f));
             if (mat.HasProperty("_OutlineColor"))
-                mat.SetColor("_OutlineColor", new Color(0.08f, 0.06f, 0.07f, 1f));
+                mat.SetColor("_OutlineColor", new Color(0.06f, 0.04f, 0.05f, 1f));
+            if (mat.HasProperty("_ShadeColor"))
+            {
+                var s = shade;
+                s.r *= 0.88f;
+                s.g *= 0.88f;
+                s.b *= 0.88f;
+                mat.SetColor("_ShadeColor", s);
+            }
             if (mat.HasProperty("_RimStrength"))
                 mat.SetFloat("_RimStrength", 0.22f);
         }

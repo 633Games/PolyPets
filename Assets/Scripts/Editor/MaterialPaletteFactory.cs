@@ -77,6 +77,14 @@ namespace PolyPets.EditorTools
             EditorGUIUtility.PingObject(palette);
         }
 
+        [MenuItem(RootMenu + "Rebuild Color Palette (Silent)", priority = 0)]
+        public static void RebuildSilent()
+        {
+            EnsurePalette(showDialog: false);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[PolyPets] Material palette rebuilt (silent).");
+        }
+
         [MenuItem(RootMenu + "Select Material Palette", priority = 1)]
         public static void SelectPalette()
         {
@@ -226,18 +234,26 @@ namespace PolyPets.EditorTools
                 mat.SetColor("_BaseColor", spec.Color);
             if (mat.HasProperty("_Color"))
                 mat.color = spec.Color;
+
+            // Punchier cel: darker shade band, harder edge, thicker outline
             if (mat.HasProperty("_ShadeColor"))
-                mat.SetColor("_ShadeColor", spec.Shade);
+            {
+                var shade = spec.Shade;
+                shade.r *= 0.88f;
+                shade.g *= 0.88f;
+                shade.b *= 0.88f;
+                mat.SetColor("_ShadeColor", shade);
+            }
             if (mat.HasProperty("_ShadeThreshold"))
-                mat.SetFloat("_ShadeThreshold", spec.ShadeThreshold);
+                mat.SetFloat("_ShadeThreshold", Mathf.Clamp(spec.ShadeThreshold + 0.04f, 0.35f, 0.7f));
             if (mat.HasProperty("_ShadeSoftness"))
-                mat.SetFloat("_ShadeSoftness", 0.05f);
+                mat.SetFloat("_ShadeSoftness", 0.02f);
             if (mat.HasProperty("_OutlineWidth"))
-                mat.SetFloat("_OutlineWidth", spec.Outline);
+                mat.SetFloat("_OutlineWidth", Mathf.Max(spec.Outline * 1.45f, spec.Outline > 0.001f ? 0.012f : 0f));
             if (mat.HasProperty("_OutlineColor"))
-                mat.SetColor("_OutlineColor", new Color(0.08f, 0.06f, 0.07f, 1f));
+                mat.SetColor("_OutlineColor", new Color(0.06f, 0.04f, 0.05f, 1f));
             if (mat.HasProperty("_RimStrength"))
-                mat.SetFloat("_RimStrength", spec.Rim);
+                mat.SetFloat("_RimStrength", Mathf.Min(1f, spec.Rim * 1.15f));
             if (mat.HasProperty("_RimColor"))
                 mat.SetColor("_RimColor", new Color(0.75f, 0.82f, 0.9f, 1f));
 

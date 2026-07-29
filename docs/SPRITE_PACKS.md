@@ -49,7 +49,8 @@ First-Time Setup also calls this apply step when the vendor folder is present.
 | CollectAll | `coins.png` | `coin` |
 
 Species tutorial icons: `GameIconsNet/Pets/{cat,dog,rabbit}.png`  
-Minigame badges: `GameIconsNet/Minigames/{fishing,dig,carrot_farm}.png`
+Minigame badges: `GameIconsNet/Minigames/{fishing,dig,carrot_farm}.png`  
+Fishing play states: `GameIconsNet/Fishing/rod_{idle,waiting,caught}.png` → also `Resources/Minigames/Fishing/`
 
 Chrome backgrounds: Kenney `UIPack/Grey/button_rectangle_depth_gradient.png` (panel) + Yellow depth gradient (buttons).
 

@@ -4,3 +4,5 @@ out.json
 out.json.tmp
 status.json
 *.tmp
+captures/
+*.png
