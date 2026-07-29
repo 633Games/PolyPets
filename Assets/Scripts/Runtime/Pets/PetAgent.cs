@@ -1,4 +1,5 @@
 using UnityEngine;
+using PolyPets.House;
 using PolyPets.Needs;
 using PolyPets.Shop;
 
@@ -11,14 +12,14 @@ namespace PolyPets.Pets
     {
         [SerializeField] private PetDefinition definition;
         [SerializeField] private string petName = "Mochi";
-        [SerializeField] private House.RoomRoot currentRoom;
+        [SerializeField] private RoomRoot currentRoom;
         [SerializeField] private Transform head;
         [SerializeField] private Transform body;
         [SerializeField] private PetNeeds needs;
 
         public PetDefinition Definition => definition;
         public string PetName => petName;
-        public House.RoomRoot CurrentRoom => currentRoom;
+        public RoomRoot CurrentRoom => currentRoom;
         public PetNeeds Needs => needs != null ? needs : needs = GetComponent<PetNeeds>();
 
         private void Awake()
@@ -36,7 +37,14 @@ namespace PolyPets.Pets
                 petName = def.displayName;
         }
 
-        public void AssignRoom(House.RoomRoot room)
+        public void SetPetName(string name)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+                petName = name.Trim();
+            gameObject.name = $"Pet_{definition?.species ?? PetSpecies.Cat}_{petName}";
+        }
+
+        public void AssignRoom(RoomRoot room)
         {
             currentRoom = room;
         }

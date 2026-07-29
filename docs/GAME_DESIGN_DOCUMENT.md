@@ -139,29 +139,17 @@ Three meters, 0–100:
 
 **Mood** = weighted average. Low mood → slower idle income + sad bubble. Critical need → urgent want (still soft; no hard permadeath in MVP).
 
-### Idle earnings (“idol clicker”)
+### Idle / companion presence
 
-While the game is open (and optionally with capped offline catch-up):
+Pets idle and breathe in the house (Feel squash, day/night). **Coins are earned only from signature minigames**, not from an idle drip.
 
-```
-Coins/sec = Σ (baseRate × moodMult × levelMult × roomBonus × prestige?)
-```
+### Starter roster (tutorial choice)
 
-- Clicking a pet does a small **manual tap earn** (satisfying pop).
-- Holding or rapid clicking is fine but should not outclass minigames entirely.
-- Offline: bank up to N hours of idle (e.g. 2–4h) when reopening.
-
-### Starter & example roster
-
-| Pet | Personality | Idle job | Signature minigame | Unlock |
-|-----|-------------|---------|--------------------|--------|
-| Cat | Curious, lazy | Fishing / napping tips | Fishing | Starter |
-| Cow | Chill, hungry | Grazing | Eat Grass (timing) | Buy Barn / Yard room |
-| Zebra | Nervous, bold | Street-crossing tips | Cross the Road | Buy Street View / Alley room |
-| Dog | Loyal, energetic | Walking routes | Walk / Fetch | Buy Hall / Porch |
-| Duck | Bubbly | Pond dips | Swim / Paddle | Buy Bathroom → Pond upgrade |
-| Fox | Clever | Scavenging | Quick scavenger hunt | Mid-game shop |
-| Frog | Zen | Bug catching | Tongue-snap timing | Garden room |
+| Pet | Personality | Signature minigame | Unlock |
+|-----|-------------|--------------------|--------|
+| Cat | Curious, lazy | Fishing QTE | Starter pick |
+| Dog | Loyal, dig-happy | Dig garden → Snap (wrong holes fill in) | Starter pick |
+| Rabbit | Energetic, snacky | Carrot farm collect | Starter pick |
 
 More species = more rooms = clearer progress fantasy.
 

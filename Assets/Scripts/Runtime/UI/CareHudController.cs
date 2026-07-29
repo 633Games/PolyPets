@@ -121,12 +121,23 @@ namespace PolyPets.UI
 
         private void OnMinigameClicked()
         {
+            if (ActivePet == null)
+            {
+                if (statusText != null)
+                    statusText.text = "Finish the tutorial first!";
+                return;
+            }
+
             if (minigames == null)
                 return;
+            if (minigames.IsBusy)
+                return;
+
             minigames.SetActivePet(ActivePet);
             minigames.PlayActivePetMinigame();
+            var blurb = ActivePet.Definition != null ? ActivePet.Definition.minigameBlurb : "Play!";
             if (statusText != null)
-                statusText.text = "Fishing… wait for the bite!";
+                statusText.text = blurb;
         }
 
         public void RefreshAll()

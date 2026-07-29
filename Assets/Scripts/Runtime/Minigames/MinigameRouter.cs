@@ -5,9 +5,6 @@ using PolyPets.Pets;
 
 namespace PolyPets.Minigames
 {
-    /// <summary>
-    /// Shared minigame result. Coins are awarded only through this path.
-    /// </summary>
     public readonly struct MinigameResult
     {
         public readonly string MinigameId;
@@ -24,8 +21,16 @@ namespace PolyPets.Minigames
         }
     }
 
+    public interface IPetMinigame
+    {
+        bool IsPlaying { get; }
+        void Play(PetAgent pet, Action<MinigameResult> onDone);
+        void Abort();
+    }
+
     /// <summary>
-    /// Routes minigame play and pays out coins. Placeholder fishing is included for the vertical slice.
+    /// Routes the active pet to its signature coin-earning minigame.
+    /// Cat → Fishing QTE · Dog → Dig then Snap · Rabbit → Carrot Farm
     /// </summary>
     public sealed class MinigameRouter : MonoBehaviour
     {
@@ -33,16 +38,28 @@ namespace PolyPets.Minigames
 
         [SerializeField] private PetAgent activePet;
         [SerializeField] private FishingMinigame fishing;
+        [SerializeField] private DigSnapMinigame digSnap;
+        [SerializeField] private CarrotFarmMinigame carrotFarm;
+        [SerializeField] private MinigameHud minigameHud;
+
+        public bool IsBusy =>
+            (fishing != null && fishing.IsPlaying)
+            || (digSnap != null && digSnap.IsPlaying)
+            || (carrotFarm != null && carrotFarm.IsPlaying);
 
         public event Action<MinigameResult> MinigameFinished;
 
         private void Awake()
         {
             Instance = this;
-            if (fishing == null)
-                fishing = GetComponent<FishingMinigame>();
-            if (fishing == null)
-                fishing = gameObject.AddComponent<FishingMinigame>();
+            fishing ??= GetComponent<FishingMinigame>() ?? gameObject.AddComponent<FishingMinigame>();
+            digSnap ??= GetComponent<DigSnapMinigame>() ?? gameObject.AddComponent<DigSnapMinigame>();
+            carrotFarm ??= GetComponent<CarrotFarmMinigame>() ?? gameObject.AddComponent<CarrotFarmMinigame>();
+            minigameHud ??= GetComponent<MinigameHud>() ?? gameObject.AddComponent<MinigameHud>();
+
+            fishing.BindHud(minigameHud);
+            digSnap.BindHud(minigameHud);
+            carrotFarm.BindHud(minigameHud);
         }
 
         private void OnDestroy()
@@ -53,24 +70,43 @@ namespace PolyPets.Minigames
 
         public void SetActivePet(PetAgent pet) => activePet = pet;
 
+        public void BindHud(MinigameHud hud)
+        {
+            minigameHud = hud;
+            fishing?.BindHud(hud);
+            digSnap?.BindHud(hud);
+            carrotFarm?.BindHud(hud);
+        }
+
         public void PlayActivePetMinigame()
         {
+            if (IsBusy)
+            {
+                Debug.Log("[PolyPets] Minigame already running.");
+                return;
+            }
+
             if (activePet == null)
             {
                 Debug.LogWarning("[PolyPets] No active pet for minigame.");
                 return;
             }
 
-            string id = activePet.Definition != null
-                ? activePet.Definition.signatureMinigame
-                : "Fishing";
+            var id = activePet.Definition != null
+                ? activePet.Definition.minigame
+                : MinigameId.Fishing;
 
-            if (string.Equals(id, "Fishing", StringComparison.OrdinalIgnoreCase))
-                fishing.Play(activePet, OnFinished);
-            else
+            switch (id)
             {
-                // Fallback until other minigames exist.
-                fishing.Play(activePet, OnFinished);
+                case MinigameId.DigSnap:
+                    digSnap.Play(activePet, OnFinished);
+                    break;
+                case MinigameId.CarrotFarm:
+                    carrotFarm.Play(activePet, OnFinished);
+                    break;
+                default:
+                    fishing.Play(activePet, OnFinished);
+                    break;
             }
         }
 
@@ -83,101 +119,6 @@ namespace PolyPets.Minigames
                 activePet?.Needs?.NotifyMinigameCompleted(result.Score01);
 
             MinigameFinished?.Invoke(result);
-        }
-    }
-
-    /// <summary>
-    /// Lightweight timing fishing loop (Space / click). Earns coins on catch — the only income source for now.
-    /// </summary>
-    public sealed class FishingMinigame : MonoBehaviour
-    {
-        [SerializeField] private int baseCoins = 12;
-        [SerializeField] private int perfectBonus = 8;
-        [SerializeField] private float windowSeconds = 0.55f;
-        [SerializeField] private float roundSeconds = 8f;
-
-        private PetAgent _pet;
-        private Action<MinigameResult> _onDone;
-        private bool _playing;
-        private float _elapsed;
-        private float _biteAt;
-        private bool _biting;
-        private bool _resolved;
-
-        public bool IsPlaying => _playing;
-
-        public void Play(PetAgent pet, Action<MinigameResult> onDone)
-        {
-            _pet = pet;
-            _onDone = onDone;
-            _playing = true;
-            _resolved = false;
-            _biting = false;
-            _elapsed = 0f;
-            _biteAt = UnityEngine.Random.Range(1.4f, Mathf.Max(2f, roundSeconds - 1.5f));
-            Debug.Log("[PolyPets] Fishing started — wait for the bite, then press Space / click.");
-        }
-
-        private void Update()
-        {
-            if (!_playing)
-                return;
-
-            _elapsed += Time.deltaTime;
-
-            if (!_biting && _elapsed >= _biteAt)
-            {
-                _biting = true;
-                Debug.Log("[PolyPets] ! Bite ! — press Space / mouse now");
-            }
-
-            bool pressed = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
-
-            if (_biting && !_resolved && pressed)
-            {
-                float delta = _elapsed - _biteAt;
-                bool perfect = delta <= windowSeconds * 0.45f;
-                bool ok = delta <= windowSeconds;
-                Finish(ok, perfect);
-                return;
-            }
-
-            if (_biting && _elapsed > _biteAt + windowSeconds)
-            {
-                Finish(false, false);
-                return;
-            }
-
-            if (_elapsed >= roundSeconds)
-                Finish(false, false);
-        }
-
-        private void Finish(bool caught, bool perfect)
-        {
-            if (_resolved)
-                return;
-            _resolved = true;
-            _playing = false;
-
-            int coins = 0;
-            float score = 0f;
-            if (caught)
-            {
-                coins = baseCoins + (perfect ? perfectBonus : 0);
-                score = perfect ? 1f : 0.65f;
-                Debug.Log(perfect
-                    ? $"[PolyPets] Perfect catch! +{coins} coins"
-                    : $"[PolyPets] Caught a fish. +{coins} coins");
-            }
-            else
-            {
-                // Soft fail still teaches the loop — tiny pity coins so they can eventually buy food.
-                coins = 2;
-                score = 0.15f;
-                Debug.Log($"[PolyPets] Got away… +{coins} pity coins. Try again!");
-            }
-
-            _onDone?.Invoke(new MinigameResult("Fishing", coins, score, completed: true));
         }
     }
 }

@@ -18,6 +18,7 @@ using PolyPets.Needs;
 using PolyPets.Pets;
 using PolyPets.Rendering;
 using PolyPets.Shop;
+using PolyPets.Tutorial;
 using PolyPets.UI;
 
 namespace PolyPets.EditorTools
@@ -51,7 +52,7 @@ namespace PolyPets.EditorTools
             scene.name = "House_LivingRoom";
 
             var materials = CreateOrLoadMaterials();
-            var catDef = CreateOrLoadCatDefinition(materials.CatPrimary);
+            var pets = PetCatalogFactory.EnsureStarterPets();
             var volumeProfile = CreateOrLoadVolumeProfile();
             var foods = FoodCatalogFactory.EnsureDefaultFoods();
 
@@ -67,13 +68,7 @@ namespace PolyPets.EditorTools
 
             var livingRoom = BuildLivingRoom(environment, materials);
             house.RegisterRoom(livingRoom);
-
-            var cat = BuildBoxHeadCat(characters, catDef, materials);
-            if (cat.GetComponent<PetNeeds>() == null)
-                cat.gameObject.AddComponent<PetNeeds>();
-            livingRoom.SetOccupant(cat);
-            // Feel hierarchy: Pet root → FEEL[Squash] (1,1,1) → meshes (idle breathe, no animator).
-            FeelTagBinder.WrapChildrenWithFeelContainer(cat.transform, FeelTagType.Squash, "Idle");
+            // Pet is spawned by the tutorial after name + species choice.
 
             var mainCamera = BuildCamera(cameras);
             var houseCam = mainCamera.gameObject.AddComponent<HouseCameraController>();
@@ -88,14 +83,18 @@ namespace PolyPets.EditorTools
             inventory.SetCatalog(foods);
             WireFoodInventory(inventory, foods);
             var minigames = systems.AddComponent<MinigameRouter>();
-            minigames.SetActivePet(cat);
+            var minigameHud = systems.AddComponent<MinigameHud>();
+            minigames.BindHud(minigameHud);
 
             var desktop = systems.AddComponent<DesktopWindowController>();
+            var tutorial = systems.AddComponent<StarterTutorial>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
             var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house, foods[0]);
+            BuildMinigameOverlay(hud.canvas.transform, minigameHud);
+            BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials);
 
-            WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care);
+            WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care, tutorial);
             WireHouseCamera(houseCam, mainCamera);
             WireHouseController(house, livingRoom);
             WireEconomy(economy, startingCoins: 0);
@@ -108,21 +107,20 @@ namespace PolyPets.EditorTools
             Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            Selection.activeGameObject = cat.gameObject;
-            EditorGUIUtility.PingObject(cat.gameObject);
+            Selection.activeGameObject = tutorial.gameObject;
+            EditorGUIUtility.PingObject(tutorial.gameObject);
 
             Debug.Log(
                 "[PolyPets] Starter house scene ready.\n" +
                 $"Saved to {ScenePath}\n" +
-                "Loop: minigame → coins → buy food → feed → happiness/hunger.");
+                "Tutorial: welcome → name → pick Cat/Dog/Rabbit → minigame earns coins → buy food.");
 
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
                 "Starter house scene ready.\n\n" +
-                "• Hunger + happiness on the cat\n" +
-                "• Coins from Fishing minigame only\n" +
-                "• Shop buys food · Feed consumes food\n" +
-                "• FEEL[Squash] + cel + day/night\n\n" +
+                "• Tutorial: welcome, name, choose Cat/Dog/Rabbit\n" +
+                "• Cat Fishing QTE · Dog Dig+Snap · Rabbit Carrot Farm\n" +
+                "• Coins from minigames → buy food → feed\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -308,23 +306,8 @@ namespace PolyPets.EditorTools
 
         private static PetDefinition CreateOrLoadCatDefinition(Material primary)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<PetDefinition>(PetDefPath);
-            if (existing != null)
-                return existing;
-
-            var def = ScriptableObject.CreateInstance<PetDefinition>();
-            def.petId = "cat";
-            def.displayName = "Cat";
-            def.personality = "Curious, lazy";
-            def.signatureMinigame = "Fishing";
-            def.baseCoinsPerSecond = 1.25f;
-            def.primaryColor = primary != null && primary.HasProperty("_BaseColor")
-                ? primary.GetColor("_BaseColor")
-                : new Color(0.86f, 0.55f, 0.28f);
-            def.secondaryColor = new Color(0.18f, 0.15f, 0.13f);
-
-            AssetDatabase.CreateAsset(def, PetDefPath);
-            return def;
+            // Prefer shared catalog.
+            return PetCatalogFactory.EnsureStarterPets().cat;
         }
 
         private static GameObject CreateRoot(string name)
@@ -585,6 +568,7 @@ namespace PolyPets.EditorTools
         {
             public HudController hud;
             public CareHudController care;
+            public Canvas canvas;
         }
 
         private static HudBundle BuildHud(
@@ -606,6 +590,7 @@ namespace PolyPets.EditorTools
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.pixelPerfect = true;
+            canvas.sortingOrder = 10;
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -729,7 +714,126 @@ namespace PolyPets.EditorTools
             hudRoot.RefreshButtons();
             care.RefreshAll();
 
-            return new HudBundle { hud = hud, care = care };
+            return new HudBundle { hud = hud, care = care, canvas = canvas };
+        }
+
+        private static void BuildMinigameOverlay(Transform canvas, MinigameHud hud)
+        {
+            var root = CreateUiPanel(canvas, "MinigameOverlay", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(420f, 320f), new Color(0.05f, 0.04f, 0.04f, 0.92f));
+            root.SetActive(false);
+
+            var prompt = CreateUiText(root.transform, "Prompt", "Minigame",
+                new Vector2(0.5f, 0.58f), new Vector2(0.5f, 0.58f), Vector2.zero, new Vector2(390f, 220f),
+                TextAnchor.UpperCenter, 15);
+            prompt.horizontalOverflow = HorizontalWrapMode.Wrap;
+            prompt.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var score = CreateUiText(root.transform, "Score", "Coins 0",
+                new Vector2(0.5f, 0.08f), new Vector2(0.5f, 0.08f), Vector2.zero, new Vector2(360f, 28f),
+                TextAnchor.MiddleCenter, 16);
+
+            hud.Bind(prompt, score, root);
+        }
+
+        private static void BuildTutorialPanel(
+            Transform canvas,
+            StarterTutorial tutorial,
+            Transform charactersRoot,
+            RoomRoot room,
+            MinigameRouter router,
+            (PetDefinition cat, PetDefinition dog, PetDefinition rabbit) pets,
+            MaterialKit materials)
+        {
+            var root = CreateUiPanel(canvas, "TutorialPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(420f, 460f), new Color(0.09f, 0.07f, 0.06f, 0.96f));
+
+            var title = CreateUiText(root.transform, "Title", "Welcome to PolyPets",
+                new Vector2(0.5f, 0.9f), new Vector2(0.5f, 0.9f), Vector2.zero, new Vector2(380f, 40f),
+                TextAnchor.MiddleCenter, 22);
+
+            var body = CreateUiText(root.transform, "Body", "A cozy desktop home for box-headed pals.",
+                new Vector2(0.5f, 0.68f), new Vector2(0.5f, 0.68f), Vector2.zero, new Vector2(360f, 140f),
+                TextAnchor.UpperCenter, 15);
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            body.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var inputGo = new GameObject("NameInput", typeof(RectTransform), typeof(Image), typeof(InputField));
+            inputGo.transform.SetParent(root.transform, false);
+            var inputRt = inputGo.GetComponent<RectTransform>();
+            inputRt.anchorMin = inputRt.anchorMax = new Vector2(0.5f, 0.42f);
+            inputRt.sizeDelta = new Vector2(280f, 40f);
+            inputGo.GetComponent<Image>().color = new Color(0.18f, 0.15f, 0.13f, 1f);
+            var input = inputGo.GetComponent<InputField>();
+
+            var placeholderGo = new GameObject("Placeholder", typeof(RectTransform), typeof(Text));
+            placeholderGo.transform.SetParent(inputGo.transform, false);
+            StretchFull(placeholderGo.GetComponent<RectTransform>(), 8f);
+            var placeholder = placeholderGo.GetComponent<Text>();
+            placeholder.text = "Pet name…";
+            placeholder.color = new Color(1f, 1f, 1f, 0.35f);
+            placeholder.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+                               ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            placeholder.fontSize = 16;
+
+            var inputTextGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            inputTextGo.transform.SetParent(inputGo.transform, false);
+            StretchFull(inputTextGo.GetComponent<RectTransform>(), 8f);
+            var inputText = inputTextGo.GetComponent<Text>();
+            inputText.font = placeholder.font;
+            inputText.fontSize = 16;
+            inputText.color = Color.white;
+            inputText.supportRichText = false;
+
+            input.textComponent = inputText;
+            input.placeholder = placeholder;
+            input.text = "Mochi";
+            inputGo.SetActive(false);
+
+            var next = CreateSimpleButton(root.transform, "NextButton", "Let's go", new Vector2(0.5f, 0.18f), new Vector2(160f, 44f));
+            var cat = CreateSimpleButton(root.transform, "Btn_Cat", "Cat\nFishing", new Vector2(0.2f, 0.22f), new Vector2(110f, 70f));
+            var dog = CreateSimpleButton(root.transform, "Btn_Dog", "Dog\nDig + Snap", new Vector2(0.5f, 0.22f), new Vector2(110f, 70f));
+            var rabbit = CreateSimpleButton(root.transform, "Btn_Rabbit", "Rabbit\nCarrots", new Vector2(0.8f, 0.22f), new Vector2(110f, 70f));
+            cat.gameObject.SetActive(false);
+            dog.gameObject.SetActive(false);
+            rabbit.gameObject.SetActive(false);
+
+            var nextLabel = next.GetComponentInChildren<Text>();
+
+            tutorial.BindUi(root, title, body, input, next, nextLabel, cat, dog, rabbit);
+            tutorial.BindWorld(
+                charactersRoot,
+                room,
+                router,
+                pets.cat,
+                pets.dog,
+                pets.rabbit,
+                materials.CatPrimary,
+                materials.CatSecondary);
+        }
+
+        private static void StretchFull(RectTransform rt, float pad)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(pad, pad);
+            rt.offsetMax = new Vector2(-pad, -pad);
+        }
+
+        private static Button CreateSimpleButton(Transform parent, string name, string label, Vector2 anchor, Vector2 size)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = anchor;
+            rt.sizeDelta = size;
+            go.GetComponent<Image>().color = new Color(0.25f, 0.2f, 0.17f, 1f);
+            var button = go.GetComponent<Button>();
+
+            var text = CreateUiText(go.transform, "Label", label, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, size - new Vector2(8f, 8f), TextAnchor.MiddleCenter, 14);
+            text.raycastTarget = false;
+            return button;
         }
 
         private static GameObject CreateUiPanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
@@ -780,7 +884,8 @@ namespace PolyPets.EditorTools
             EconomyService economy,
             FoodInventory inventory,
             MinigameRouter minigames,
-            CareHudController care)
+            CareHudController care,
+            StarterTutorial tutorial)
         {
             var so = new SerializedObject(bootstrap);
             so.FindProperty("house").objectReferenceValue = house;
@@ -791,6 +896,7 @@ namespace PolyPets.EditorTools
             so.FindProperty("foodInventory").objectReferenceValue = inventory;
             so.FindProperty("minigameRouter").objectReferenceValue = minigames;
             so.FindProperty("careHud").objectReferenceValue = care;
+            so.FindProperty("tutorial").objectReferenceValue = tutorial;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
