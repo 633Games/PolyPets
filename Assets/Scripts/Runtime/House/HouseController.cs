@@ -64,6 +64,7 @@ namespace PolyPets.House
             }
 
             HouseBuffs.Instance?.Recalculate();
+            Economy.IdleCoinSpawner.Instance?.OnRoomChanged();
         }
 
         public void NextRoom()

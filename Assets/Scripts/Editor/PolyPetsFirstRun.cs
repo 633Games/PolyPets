@@ -17,11 +17,24 @@ namespace PolyPets.EditorTools
         [MenuItem("PolyPets/★ First-Time Setup (run this)", priority = -100)]
         public static void FirstTimeSetup()
         {
+            // Prefer importing More Mountains Feel BEFORE this step so upgrade can run.
+            bool feelReady = FeelTagEditorTools.IsFeelPresent(out var feelDetail);
+
             PolyPetsSceneBootstrap.BootstrapStarterHouseScene();
-            // Wire Kenney / game-icons vendor art into UiSpritePack_Default when present.
-            // (Bootstrap already applies once; safe to re-run.)
             VendorSpritePackApplier.ApplyVendorSprites(showDialog: false);
             MaterialPaletteFactory.EnsurePalette(showDialog: false);
+
+            if (feelReady)
+            {
+                FeelTagEditorTools.UpgradeTagsToMmfPlayers(showDialog: false);
+                Debug.Log("[PolyPets] Feel detected — upgraded FEEL[Squash] tags toward MMF Players.\n" + feelDetail);
+            }
+            else
+            {
+                Debug.Log(
+                    "[PolyPets] Feel Asset Store pack not detected yet. Built-in FEEL[Squash] idle is active.\n" +
+                    "Import Feel, then run PolyPets → Feel → Upgrade Tags To MMF Players.");
+            }
 
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
             if (scene != null)
@@ -32,6 +45,15 @@ namespace PolyPets.EditorTools
             }
 
             EditorPrefs.SetBool(PrefKey, true);
+
+            EditorUtility.DisplayDialog(
+                "PolyPets Ready",
+                "Setup complete.\n\n" +
+                (feelReady
+                    ? "Feel pack detected and wired to FEEL[Squash] tags.\n"
+                    : "Tip: import More Mountains Feel, then re-run Feel → Upgrade Tags.\n") +
+                "Idle coins drip onto the floor (max 10). Ambient loop is playing on Play.",
+                "Nice");
         }
 
         [InitializeOnLoadMethod]
@@ -52,12 +74,13 @@ namespace PolyPets.EditorTools
                 bool run = EditorUtility.DisplayDialog(
                     "Welcome to PolyPets",
                     "Fresh project detected — no starter house scene yet.\n\n" +
-                    "Click OK to run First-Time Setup:\n" +
-                    "• URP pipeline\n" +
-                    "• Cel-shaded living room greybox\n" +
-                    "• Tutorial + Cat/Dog/Rabbit minigames\n" +
-                    "• Food shop + bowls\n\n" +
-                    "You can also use: PolyPets → ★ First-Time Setup",
+                    "Recommended first: import More Mountains Feel (Asset Store).\n\n" +
+                    "Then OK to run First-Time Setup:\n" +
+                    "• URP + greybox house + 4 rooms\n" +
+                    "• Minigames, food/décor shops, clean scrub\n" +
+                    "• Idle floor coins + ambient audio\n" +
+                    "• Feel upgrade if the pack is present\n\n" +
+                    "Or: PolyPets → ★ First-Time Setup",
                     "Run setup",
                     "Later");
 

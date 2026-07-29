@@ -110,6 +110,8 @@ namespace PolyPets.Needs
             if (hunger > hungryThreshold)
                 SetHappiness(happiness + 3f);
 
+            GetComponent<Pets.PetProgression>()?.AddXp(5f, "feed");
+
             Debug.Log($"[PolyPets] Fed with {food.displayName}. Hunger={hunger:0} Happy={happiness:0}");
             return true;
         }
@@ -137,6 +139,7 @@ namespace PolyPets.Needs
             float gain = Mathf.Lerp(8f, 45f, Mathf.Clamp01(scrubCoverage01));
             SetCleanliness(cleanliness + gain);
             SetHappiness(happiness + happinessFromCleaning * Mathf.Clamp01(scrubCoverage01));
+            GetComponent<Pets.PetProgression>()?.AddXp(8f + scrubCoverage01 * 8f, "clean");
         }
 
         public string StatusLabel()

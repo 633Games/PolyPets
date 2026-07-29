@@ -25,6 +25,7 @@ namespace PolyPets.UI
         [SerializeField] private Text hungerText;
         [SerializeField] private Text happinessText;
         [SerializeField] private Text cleanText;
+        [SerializeField] private Text levelText;
         [SerializeField] private Text statusText;
         [SerializeField] private Text foodStockText;
         [SerializeField] private UiChromeButton feedButton;
@@ -235,6 +236,10 @@ namespace PolyPets.UI
             if (cleanText != null)
                 cleanText.text = needs != null ? $"Clean {needs.Cleanliness:0}" : "Clean —";
 
+            var progression = pet != null ? pet.GetComponent<PetProgression>() : null;
+            if (levelText != null)
+                levelText.text = progression != null ? progression.StatusLabel() : "Lv —";
+
             bool shopOpen = (shopPanel != null && shopPanel.IsOpen)
                             || (decorationShopPanel != null && decorationShopPanel.IsOpen)
                             || (cleanScrubber != null && cleanScrubber.IsScrubMode);
@@ -278,13 +283,14 @@ namespace PolyPets.UI
             cleanScrubber?.BindHint(statusText);
         }
 
-        public void BindMeters(Text hunger, Text happiness, Text status, Text foodStock, Text clean = null)
+        public void BindMeters(Text hunger, Text happiness, Text status, Text foodStock, Text clean = null, Text level = null)
         {
             hungerText = hunger;
             happinessText = happiness;
             statusText = status;
             foodStockText = foodStock;
             cleanText = clean;
+            levelText = level;
             cleanScrubber?.BindHint(statusText);
         }
 

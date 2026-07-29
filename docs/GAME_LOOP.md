@@ -9,9 +9,7 @@
 5. If **full**, they refuse food until hunger drops
 6. Repeat
 
-Coins are **only** from minigames (boosted by room decorations).
-
-Pets **never die** — they only get hungry, sad, and dirty. Use **Clean** to scrub dirt off their material.
+**Idle floor coins drip in** (max 10 spinning coins in the room). Minigames + décor still boost earnings. Pets gain **XP / levels**.
 
 ---
 

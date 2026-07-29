@@ -4,7 +4,7 @@ using UnityEngine;
 namespace PolyPets.Economy
 {
     /// <summary>
-    /// Player wallet. Coins are earned from minigames only — not idle ticks.
+    /// Player wallet. Coins come from minigames and idle floor-coin pickups.
     /// </summary>
     [DefaultExecutionOrder(-80)]
     public sealed class EconomyService : MonoBehaviour

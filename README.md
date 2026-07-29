@@ -15,6 +15,7 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Sprite Packs](docs/SPRITE_PACKS.md)** — vendored Kenney + game-icons for v1 UI
 - **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials + albedo textures in `Assets/Materials/` / `Art/Textures/`
 - **[Rooms + Clean](docs/ROOMS_AND_CLEAN.md)** — multi-room décor, dirt scrub shader, no pet death
+- **[Idle / Feel / Audio / Levels](docs/IDLE_FEEL_AUDIO_LEVELS.md)** — floor coins, Feel import, ambient loop, XP
 
 ## When you get home (fresh clone)
 
@@ -26,9 +27,8 @@ cd PolyPets
 git checkout cursor/minigame-baselines-da80   # until merged to main
 ```
 
-1. Open the repo in **Unity Hub** with **Unity 6.3 LTS**.
-2. Wait for packages + compile.
-3. Menu: **`PolyPets → ★ First-Time Setup (run this)`** — one script builds the whole greybox house scene.
-4. Press **Play** at **480×720**.
-
-*(Optional later)* Import **Feel** from the Asset Store; drop icons into `UiSpritePack_Default`.
+1. Open in **Unity Hub** with **Unity 6.3 LTS**.
+2. *(Recommended)* Import **Feel** from the Asset Store / Package Manager first.
+3. Wait for packages + compile.
+4. Menu: **`PolyPets → ★ First-Time Setup (run this)`**
+5. Press **Play** at **480×720**.

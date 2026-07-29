@@ -8,7 +8,9 @@ Official docs:
 - [MMF Player / MMFeedbacks](https://feel-docs.moremountains.com/mmfeedbacks.html)
 - [Feedback list (SquashAndStretch, Wiggle, Springs…)](https://feel-docs.moremountains.com/list_mmfeedbacks.html)
 
-Feel is an **Asset Store** package (not in this git repo). Import via Hub/Package Manager → My Assets → **Feel**, then open a demo once so dependencies install.
+Feel is an **Asset Store** package (not in this git repo). Import via Hub/Package Manager → My Assets → **Feel** **before** First-Time Setup when possible, then open a demo once so dependencies install.
+
+`PolyPets → ★ First-Time Setup` detects Feel and auto-runs **Upgrade Tags To MMF Players**. Runtime `FeelBridge` plays any `MMF_Player` safely when Feel is present (no-ops otherwise).
 
 ### FEEL[Type] tags (PolyPets)
 

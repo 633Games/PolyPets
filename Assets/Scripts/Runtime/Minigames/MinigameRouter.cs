@@ -118,6 +118,14 @@ namespace PolyPets.Minigames
                 var buffs = PolyPets.House.HouseBuffs.Instance;
                 if (buffs != null)
                     payout = buffs.ApplyCoinBonus(payout);
+
+                var progression = activePet != null ? activePet.GetComponent<PetProgression>() : null;
+                if (progression != null)
+                {
+                    payout = Mathf.Max(1, Mathf.RoundToInt(payout * (1f + progression.MinigameCoinBonus)));
+                    progression.AddXp(12f + result.Score01 * 10f, result.MinigameId);
+                }
+
                 EconomyService.Instance?.AddCoins(payout, result.MinigameId);
             }
 

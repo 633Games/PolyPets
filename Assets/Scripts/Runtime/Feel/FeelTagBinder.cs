@@ -49,6 +49,9 @@ namespace PolyPets.Feel
                     tag.GetComponent<FeelPopIn>()?.Play();
                     break;
             }
+
+            // If More Mountains Feel is imported, also trigger any MMF_Player on the object.
+            FeelBridge.TryPlayFeedback(tag.gameObject, tag.TagType.ToString());
         }
 
         public static void Stop(FeelTag tag)

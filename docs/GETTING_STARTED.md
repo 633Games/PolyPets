@@ -17,6 +17,14 @@ Open the folder in **Unity Hub → Open →** select the repo root (the folder w
 
 Wait for package resolve + script compile (first open can take a few minutes).
 
+## Before First-Time Setup (recommended)
+
+1. In Unity Package Manager → **My Assets**, import **More Mountains Feel**  
+2. Open a Feel demo once so dependencies resolve  
+3. Then run **`PolyPets → ★ First-Time Setup (run this)`** — it auto-upgrades `FEEL[Squash]` tags when Feel is present  
+
+If you skip Feel, built-in idle squash still works; upgrade later via **PolyPets → Feel → Upgrade Tags To MMF Players**.
+
 ## One script sets up the environment
 
 After compile finishes:
@@ -26,20 +34,20 @@ After compile finishes:
 That single menu:
 
 1. Ensures **URP** pipeline assets  
-2. Builds the locked **25 materials** in `Assets/Materials/` ([palette](COLOR_PALETTE.md))  
-3. Builds UI sprite pack + materials + volume profile  
-4. Applies vendored **Kenney / game-icons** art into `UiSpritePack_Default` (see [`SPRITE_PACKS.md`](SPRITE_PACKS.md))  
-5. Creates **`Assets/Scenes/House_LivingRoom.unity`** — cel-shaded greybox living room, lights, day/night, HUD, tutorial, minigames, shop  
+2. Builds the locked **25 materials** in `Assets/Materials/`  
+3. Builds UI sprite pack + volume profile + vendor icons  
+4. Creates the house scene (4 rooms, shops, clean, idle coins, ambient audio, levels)  
+5. Upgrades Feel tags if the Asset Store pack is imported  
 6. Opens the scene  
-
-On a fresh clone, Unity may also pop a **Welcome to PolyPets** dialog offering the same setup.
 
 ## Play
 
-1. Set Game view to **480×720** (or Play — window controller requests that size)
-2. Press **Play**
-3. Tutorial: welcome → name pet → pick **Cat / Dog / Rabbit**
-4. Play minigame → earn coins → Shop → click bowl to feed
+1. Game view **480×720** → **Play**
+2. Tutorial → name → Cat/Dog/Rabbit  
+3. Click spinning floor coins · play minigames · Shop / Décor / Clean  
+4. Ambient house loop plays in the background  
+
+More: [`IDLE_FEEL_AUDIO_LEVELS.md`](IDLE_FEEL_AUDIO_LEVELS.md) · [`ROOMS_AND_CLEAN.md`](ROOMS_AND_CLEAN.md)
 
 ## If something’s missing
 

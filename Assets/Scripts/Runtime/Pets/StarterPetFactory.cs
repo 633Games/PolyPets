@@ -42,6 +42,9 @@ namespace PolyPets.Pets
             FeelTagBinder.WrapChildrenWithFeelContainer(root.transform, FeelTagType.Squash, "Idle");
             agent.EnsureFoodBowl(secondary);
 
+            if (root.GetComponent<PetProgression>() == null)
+                root.AddComponent<PetProgression>();
+
             var dirt = root.GetComponent<PetDirtVisual>() ?? root.AddComponent<PetDirtVisual>();
             dirt.BindNeeds(needs);
             dirt.CaptureRenderersFromHierarchy();

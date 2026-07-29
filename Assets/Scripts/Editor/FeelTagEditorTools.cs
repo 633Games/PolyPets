@@ -58,15 +58,24 @@ namespace PolyPets.EditorTools
         }
 
         [MenuItem(RootMenu + "Upgrade Tags To MMF Players (requires Feel)", priority = 21)]
-        public static void UpgradeTagsToMmfPlayers()
+        public static void UpgradeTagsToMmfPlayersMenu()
+        {
+            UpgradeTagsToMmfPlayers(showDialog: true);
+        }
+
+        public static int UpgradeTagsToMmfPlayers(bool showDialog = true)
         {
             if (!IsFeelPresent(out _))
             {
-                EditorUtility.DisplayDialog(
-                    "Feel Required",
-                    "Import More Mountains Feel first (Package Manager → My Assets → Feel).\n\nDocs: https://feel-docs.moremountains.com/how-to-install.html",
-                    "OK");
-                return;
+                if (showDialog)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Feel Required",
+                        "Import More Mountains Feel first (Package Manager → My Assets → Feel).\n\nDocs: https://feel-docs.moremountains.com/how-to-install.html",
+                        "OK");
+                }
+
+                return 0;
             }
 
             var mmfPlayerType = FindType("MoreMountains.Feedbacks.MMF_Player")
@@ -75,8 +84,9 @@ namespace PolyPets.EditorTools
 
             if (mmfPlayerType == null)
             {
-                EditorUtility.DisplayDialog("Feel", "Could not resolve MMF_Player type.", "OK");
-                return;
+                if (showDialog)
+                    EditorUtility.DisplayDialog("Feel", "Could not resolve MMF_Player type.", "OK");
+                return 0;
             }
 
             int upgraded = 0;
@@ -101,13 +111,18 @@ namespace PolyPets.EditorTools
             }
 
             Debug.Log($"[PolyPets] Upgraded {upgraded} FEEL[Squash] tag(s) toward MMF Players. Tweak curves in the Feel inspector.");
-            EditorUtility.DisplayDialog(
-                "Feel Upgrade",
-                $"Prepared MMF Player on {upgraded} FEEL[Squash] object(s).\n\n" +
-                "Open each MMF Player and add/confirm Transform → SquashAndStretch:\n" +
-                "• Axis: YtoXZ\n• Timing: repeat forever (idle breathe)\n• Target: this FEEL[Squash] transform (scale 1,1,1)\n" +
-                "Auto Play on Start = on",
-                "OK");
+            if (showDialog)
+            {
+                EditorUtility.DisplayDialog(
+                    "Feel Upgrade",
+                    $"Prepared MMF Player on {upgraded} FEEL[Squash] object(s).\n\n" +
+                    "Open each MMF Player and add/confirm Transform → SquashAndStretch:\n" +
+                    "• Axis: YtoXZ\n• Timing: repeat forever (idle breathe)\n• Target: this FEEL[Squash] transform (scale 1,1,1)\n" +
+                    "Auto Play on Start = on",
+                    "OK");
+            }
+
+            return upgraded;
         }
 
         private static void TryConfigureMmfSquash(Component player, Type squashType, Transform target)

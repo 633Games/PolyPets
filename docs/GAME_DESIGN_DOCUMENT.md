@@ -141,7 +141,7 @@ Three meters, 0–100:
 
 ### Idle / companion presence
 
-Pets idle and breathe in the house (Feel squash, day/night). **Coins are earned only from signature minigames**, not from an idle drip.
+Pets idle and breathe in the house (Feel squash, day/night). **Coins come from signature minigames and idle floor-coin pickups** (max 10 spinning coins on the floor at a time).
 
 ### Starter roster (tutorial choice)
 
@@ -207,10 +207,10 @@ Buying a room is the big beat; renovating is the drip upgrade.
 
 | Currency | Earn | Spend |
 |----------|------|-------|
-| **Coins** | **Minigames only** (e.g. Fishing) | Food, rooms, adopts, renovations |
+| **Coins** | Minigames + **idle floor-coin pickups** (max 10 spinning coins per room) | Food, rooms, décor, adopts, renovations |
 | **Stars** (later) | First clears / dailies | Rare pets, showcase renos |
 
-**No idle coin drip for MVP.** Pets still have idle personality, but cash comes from playing.
+Idle drip pauses while 10 coins are already on the floor. Collect to resume. Pet **levels / XP** raise drip rate and a small minigame coin %.
 
 ### Needs
 

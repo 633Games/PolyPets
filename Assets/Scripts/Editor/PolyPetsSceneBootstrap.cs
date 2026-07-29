@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
+using PolyPets.Audio;
 using PolyPets.Camera;
 using PolyPets.Core;
 using PolyPets.Desktop;
@@ -109,6 +110,13 @@ namespace PolyPets.EditorTools
             var minigameHud = systems.AddComponent<MinigameHud>();
             minigames.BindHud(minigameHud);
             var cleanScrubber = systems.AddComponent<PetCleanScrubber>();
+            var idleCoins = systems.AddComponent<IdleCoinSpawner>();
+            idleCoins.Bind(house, palette != null ? palette.coinGold : materials.Accent);
+
+            var ambient = systems.AddComponent<AmbientAudioPlayer>();
+            var houseClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Ambient/Amb_CozyHouse_CC0.ogg");
+            var padClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Ambient/Amb_SoftPad_Proc.ogg");
+            ambient.BindClips(houseClip, padClip);
 
             var desktop = systems.AddComponent<DesktopWindowController>();
             var tutorial = systems.AddComponent<StarterTutorial>();
@@ -151,7 +159,9 @@ namespace PolyPets.EditorTools
                 "• 4 rooms: Living, Kitchen, Bedroom, Garden\n" +
                 "• Clean scrub (dirt shader)\n" +
                 "• Food + Décor shops\n" +
-                "• Pets never die — only sad/dirty/hungry\n\n" +
+                "• Idle floor coins (max 10) + ambient loop\n" +
+                "• Pet levels / XP\n" +
+                "• Import Feel before setup for MMF upgrade\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -752,11 +762,14 @@ namespace PolyPets.EditorTools
                 new Vector2(0.36f, 0.55f), new Vector2(0.36f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
                 TextAnchor.MiddleLeft, 13);
             var cleanLabel = CreateUiText(needsBar.transform, "CleanText", "Clean 80",
-                new Vector2(0.58f, 0.55f), new Vector2(0.58f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
-                TextAnchor.MiddleLeft, 13);
-            var foodLabel = CreateUiText(needsBar.transform, "FoodStockText", "Food x0",
-                new Vector2(0.82f, 0.55f), new Vector2(0.82f, 0.55f), Vector2.zero, new Vector2(110f, 22f),
+                new Vector2(0.52f, 0.55f), new Vector2(0.52f, 0.55f), Vector2.zero, new Vector2(90f, 22f),
                 TextAnchor.MiddleLeft, 12);
+            var levelLabel = CreateUiText(needsBar.transform, "LevelText", "Lv 1",
+                new Vector2(0.72f, 0.55f), new Vector2(0.72f, 0.55f), Vector2.zero, new Vector2(120f, 22f),
+                TextAnchor.MiddleLeft, 12);
+            var foodLabel = CreateUiText(needsBar.transform, "FoodStockText", "Food x0",
+                new Vector2(0.92f, 0.55f), new Vector2(0.92f, 0.55f), Vector2.zero, new Vector2(90f, 22f),
+                TextAnchor.MiddleRight, 11);
             var statusLabel = CreateUiText(needsBar.transform, "StatusText", "Okay",
                 new Vector2(0.5f, 0.18f), new Vector2(0.5f, 0.18f), Vector2.zero, new Vector2(420f, 16f),
                 TextAnchor.MiddleCenter, 11);
@@ -815,7 +828,7 @@ namespace PolyPets.EditorTools
             so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel, cleanLabel);
+            care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel, cleanLabel, levelLabel);
             care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn, cleanBtn, renovateBtn, prevBtn, nextBtn);
 
             hud.SetCoins(economy != null ? economy.Coins : 0);
