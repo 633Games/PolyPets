@@ -73,10 +73,11 @@ Creates:
 
 ### Use your art
 
-1. Open `UiSpritePack_Default`
-2. Assign **panel / button** 9-slices
-3. Assign each **button icon** sprite (and edit labels if you want)
-4. Prefabs refresh from the pack via `UiChromeButton` / `UiHudRoot`
+**v1 vendor set (already in repo):** see [`SPRITE_PACKS.md`](SPRITE_PACKS.md).
+
+1. Menu: **`PolyPets → UI → Apply Vendor Sprite Pack (v1)`** (also runs during First-Time Setup)
+2. Or open `UiSpritePack_Default` and assign panel / button 9-slices + icons by hand
+3. Prefabs refresh from the pack via `UiChromeButton` / `UiHudRoot`
 
 You do **not** rebuild prefabs when swapping art — just the sprite pack.
 

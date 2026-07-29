@@ -12,6 +12,7 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Needs + Economy](docs/NEEDS_AND_ECONOMY.md)** — hunger, happiness, food shop, minigame coins
 - **[Game Loop](docs/GAME_LOOP.md)** — tutorial, Cat/Dog/Rabbit minigames
 - **[Minigame Baselines](docs/MINIGAME_BASELINES.md)** — online reference patterns for each minigame
+- **[Sprite Packs](docs/SPRITE_PACKS.md)** — vendored Kenney + game-icons for v1 UI
 
 ## When you get home (fresh clone)
 

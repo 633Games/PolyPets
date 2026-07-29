@@ -1,0 +1,2 @@
+CC0 1.0 Universal — Kenney.nl packs in this folder (UI Pack, Game Icons, Animal Pack Redux).
+See ../ATTRIBUTION.md

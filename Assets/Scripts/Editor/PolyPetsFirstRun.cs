@@ -18,6 +18,8 @@ namespace PolyPets.EditorTools
         public static void FirstTimeSetup()
         {
             PolyPetsSceneBootstrap.BootstrapStarterHouseScene();
+            // Wire Kenney / game-icons vendor art into UiSpritePack_Default when present.
+            VendorSpritePackApplier.ApplyVendorSprites(showDialog: false);
 
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
             if (scene != null)
