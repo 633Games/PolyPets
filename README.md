@@ -13,11 +13,19 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Game Loop](docs/GAME_LOOP.md)** — tutorial, Cat/Dog/Rabbit minigames
 - **[Minigame Baselines](docs/MINIGAME_BASELINES.md)** — online reference patterns for each minigame
 
-## Unity quick start
+## When you get home (fresh clone)
 
-1. Open with **Unity 6.3 LTS** (Hub).
-2. *(Optional)* Import **Feel** from the Asset Store / Package Manager.
-3. **PolyPets → Ensure URP Pipeline Assets**
-4. **PolyPets → Bootstrap Starter House Scene**
-5. Play at **480×720**
-6. Drop your icons into `UiSpritePack_Default`
+Full walkthrough: **[Getting Started](docs/GETTING_STARTED.md)**.
+
+```bash
+git clone https://github.com/633Games/PolyPets.git
+cd PolyPets
+git checkout cursor/minigame-baselines-da80   # until merged to main
+```
+
+1. Open the repo in **Unity Hub** with **Unity 6.3 LTS**.
+2. Wait for packages + compile.
+3. Menu: **`PolyPets → ★ First-Time Setup (run this)`** — one script builds the whole greybox house scene.
+4. Press **Play** at **480×720**.
+
+*(Optional later)* Import **Feel** from the Asset Store; drop icons into `UiSpritePack_Default`.

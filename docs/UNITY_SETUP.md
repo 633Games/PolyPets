@@ -21,19 +21,22 @@ Open the project with **Unity Hub → Unity 6.3 LTS**. Hub will resolve packages
 
 ## First-time setup
 
+See also: [`GETTING_STARTED.md`](GETTING_STARTED.md).
+
 1. Install **Unity 6.3 LTS** (6000.3.x) via Hub.
 2. Open this repo as a Unity project (or create a URP 3D project and merge `Assets/`, `Packages/`, `ProjectSettings/ProjectVersion.txt`).
 3. Wait for package resolve + script compile.
-4. Menu: **PolyPets → Ensure URP Pipeline Assets** (also runs automatically during bootstrap).
-5. Menu: **PolyPets → Bootstrap Starter House Scene**.
-6. Play `Assets/Scenes/House_LivingRoom.unity` at **480×720**.
+4. Menu: **`PolyPets → ★ First-Time Setup (run this)`**  
+   (Same as URP ensure + Bootstrap Starter House Scene + open scene. A welcome dialog may appear on first editor load.)
+5. Play `Assets/Scenes/House_LivingRoom.unity` at **480×720**.
 
 ### Menus
 
 | Menu | What it does |
 |------|----------------|
+| `PolyPets/★ First-Time Setup (run this)` | **One-click** URP + full scene + open it |
 | `PolyPets/Ensure URP Pipeline Assets` | Creates/assigns `PolyPets_URP` + renderer (HDR, extra lights) |
-| `PolyPets/Bootstrap Starter House Scene` | Full scene scaffold |
+| `PolyPets/Bootstrap Starter House Scene` | Full scene scaffold (also called by First-Time Setup) |
 | `PolyPets/Rebuild Volume Profile` | Recreates bloom/vignette/grade overrides |
 | `PolyPets/Frame Camera On Active Room` | Re-frame cozy 3/4 camera |
 | `PolyPets/Select Starter Scene` | Ping the saved scene |
