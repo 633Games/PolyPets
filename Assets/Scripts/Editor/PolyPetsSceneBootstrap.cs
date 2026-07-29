@@ -724,7 +724,13 @@ namespace PolyPets.EditorTools
             FoodInventory inventory,
             HouseController house)
         {
-            var shopGo = CreateChild(canvas.gameObject, "FoodShop");
+            var shopGo = new GameObject("FoodShop", typeof(RectTransform));
+            shopGo.transform.SetParent(canvas, false);
+            var shopRt = shopGo.GetComponent<RectTransform>();
+            shopRt.anchorMin = Vector2.zero;
+            shopRt.anchorMax = Vector2.one;
+            shopRt.offsetMin = Vector2.zero;
+            shopRt.offsetMax = Vector2.zero;
             var shop = shopGo.AddComponent<FoodShopPanel>();
 
             var root = CreateUiPanel(shopGo.transform, "ShopPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),

@@ -15,11 +15,13 @@ Coins are **only** from minigames.
 
 ## Starter pets & minigames
 
+Baselines and detailed rules: [`MINIGAME_BASELINES.md`](MINIGAME_BASELINES.md).
+
 | Pet | Minigame | How you earn |
 |-----|----------|--------------|
-| **Cat** | **Fishing** (QTE) | Wait for **BITE**, Space/click |
-| **Dog** | **Dig + Snap** | Dig garden; wrong holes fill in; Snap the find |
-| **Rabbit** | **Carrot Farm** | Run field; collect growing carrots |
+| **Cat** | **Fishing** | AC nibbles → **BITE** → Stardew hold/release reel bar |
+| **Dog** | **Dig + Snap** | Dig garden; wrong holes fill in; Snap the pop |
+| **Rabbit** | **Carrot Farm** | WASD harvest ready carrots before they spoil |
 
 ---
 

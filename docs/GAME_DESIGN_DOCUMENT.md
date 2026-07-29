@@ -147,9 +147,9 @@ Pets idle and breathe in the house (Feel squash, day/night). **Coins are earned 
 
 | Pet | Personality | Signature minigame | Unlock |
 |-----|-------------|--------------------|--------|
-| Cat | Curious, lazy | Fishing QTE | Starter pick |
-| Dog | Loyal, dig-happy | Dig garden → Snap (wrong holes fill in) | Starter pick |
-| Rabbit | Energetic, snacky | Carrot farm collect | Starter pick |
+| Cat | Curious, lazy | Fishing (AC + Stardew) | Starter pick |
+| Dog | Loyal, dig-happy | Dig + Snap (treasure + mole) | Starter pick |
+| Rabbit | Energetic, snacky | Carrot Farm (Farm Rush) | Starter pick |
 
 More species = more rooms = clearer progress fantasy.
 
@@ -257,43 +257,40 @@ Loop: **Play minigame → earn coins → Shop buys food → Feed pet → meters 
 
 ### Catalog
 
-#### 10.1 Fishing (Cat)
+#### 10.1 Fishing (Cat) — Animal Crossing + Stardew
 
-- Side view dock / puddle in the rundown yard.  
-- Timing bar or bite indicator; reel with click / space.  
-- Catch small fish → coins; rare boot → junk joke; rare golden fish → bonus.  
-- Difficulty: bite window shrinks slightly with level.
+Baseline details: [`MINIGAME_BASELINES.md`](MINIGAME_BASELINES.md).
 
-#### 10.2 Eat Grass (Cow)
+- Cast → **nibbles** (don’t reel) → **!!BITE!!** reaction window.  
+- Reel: hold raises green bar, release drops it; keep bar on the fish until CATCH fills.  
+- 2 short rounds → coins; early reel on a nibble spooks the fish.
+
+#### 10.2 Dig + Snap (Dog) — dig-for-treasure + whack-a-mole
+
+- Probe garden tiles; wrong digs **fill back in**.  
+- Correct dig → toy pops → **SNAP** before it ducks.  
+- Missed snap → re-buries elsewhere; earn snaps to win coins.
+
+#### 10.3 Carrot Farm (Rabbit) — Farm Rush / harvest stages
+
+- Plots: seed → sprout → **ready** → spoil if ignored.  
+- WASD run; step on ready carrots to harvest; streak bonus.  
+- Timed round under harvest pressure.
+
+#### 10.4 Eat Grass (Cow) — later
 
 - Top-down or side patch of grass tiles.  
 - Move cow, eat highlighted tasty tufts before they wilt.  
-- Avoid weeds / thorns (lose time or coins).  
-- Score = tufts eaten × mood bonus.
+- Avoid weeds / thorns (lose time or coins).
 
-#### 10.3 Cross the Road (Zebra) — Crossy Road–lite
+#### 10.5 Cross the Road (Zebra) — Crossy Road–lite, later
 
 - Grid hop forward across lanes.  
-- Cars / bikes in patterns; one-hit return to sidewalk (or lose a life).  
-- Distance = coins; milestones give Stars.  
-- Keep session short (reach goal stripe, not endless by default).
+- Cars / bikes in patterns; short goal-stripe sessions.
 
-#### 10.4 Walk / Fetch (Dog)
+#### 10.6 Swim / Paddle (Duck) — later
 
-- Side scroller or lane walk.  
-- Keep dog in happy zone: press to sniff / avoid trash / collect sticks.  
-- Optional fetch: throw ball, time catch.
-
-#### 10.5 Swim / Paddle (Duck)
-
-- Top-down pond.  
-- Steer around lily pads, collect breadcrumbs, avoid soap suds / toy boats.  
-- Combo collection increases coin multiplier briefly.
-
-#### 10.6 Farm / Bug Snap (Frog or Garden)
-
-- Timing tongue snaps at flies.  
-- Or tiny crop water/harvest loop if “farming” is framed as garden care.
+- Top-down pond; collect crumbs; avoid boats / suds.
 
 ### Want system → minigame
 

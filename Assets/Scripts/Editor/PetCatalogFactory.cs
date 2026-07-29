@@ -18,17 +18,17 @@ namespace PolyPets.EditorTools
 
             var cat = GetOrCreate("PetDefinition_Cat", "cat", "Cat", PetSpecies.Cat, MinigameId.Fishing,
                 "Curious, lazy",
-                "Fishing QTE — wait for the bite, then mash Space / click.",
+                "Fishing — ignore nibbles, hook the BITE, then hold/release the reel bar on the fish.",
                 new Color(0.86f, 0.55f, 0.28f), new Color(0.18f, 0.15f, 0.13f));
 
             var dog = GetOrCreate("PetDefinition_Dog", "dog", "Dog", PetSpecies.Dog, MinigameId.DigSnap,
                 "Loyal, dig-happy",
-                "Dig Snap — dig the garden for the buried toy, wrong holes fill in, then Snap!",
+                "Dig + Snap — dig for the buried toy (empty holes fill in), then Snap before it ducks!",
                 new Color(0.72f, 0.55f, 0.35f), new Color(0.25f, 0.18f, 0.12f));
 
             var rabbit = GetOrCreate("PetDefinition_Rabbit", "rabbit", "Rabbit", PetSpecies.Rabbit, MinigameId.CarrotFarm,
                 "Energetic, snacky",
-                "Carrot Farm — run the field and collect carrots as they grow.",
+                "Carrot Farm — harvest READY carrots before they spoil; streak for bonus coins.",
                 new Color(0.9f, 0.82f, 0.78f), new Color(0.55f, 0.35f, 0.4f));
 
             // Migrate legacy path if present

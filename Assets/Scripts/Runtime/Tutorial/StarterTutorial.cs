@@ -200,7 +200,7 @@ namespace PolyPets.Tutorial
                 case Step.ChooseSpecies:
                     SetCopy(
                         $"Pick a pal for {petName}",
-                        "Cat — Fishing QTE\nDog — Dig the garden, then Snap\nRabbit — Farm carrots in the field\n\nMinigames earn the coins you spend on food.");
+                        "Cat — Fishing (nibbles → bite → reel)\nDog — Dig + Snap (holes fill in)\nRabbit — Carrot Farm (harvest before spoil)\n\nMinigames earn the coins you spend on food.");
                     break;
             }
         }
