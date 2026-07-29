@@ -61,10 +61,40 @@ namespace PolyPets.Pets
             if (inv == null || Needs == null)
                 return false;
 
-            if (!inv.TryConsumeBestAvailable(out var food))
+            if (Needs.IsFull)
+                return false;
+
+            var species = definition != null ? definition.species : PetSpecies.Cat;
+            if (!inv.TryConsumeBestForSpecies(species, out var food))
                 return false;
 
             return Needs.TryFeed(food);
+        }
+
+        public PetFoodBowl EnsureFoodBowl(Material bowlMat = null)
+        {
+            var existing = GetComponentInChildren<PetFoodBowl>(true);
+            if (existing != null)
+            {
+                existing.Bind(this);
+                return existing;
+            }
+
+            var bowl = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            bowl.name = "FoodBowl";
+            bowl.transform.SetParent(transform, false);
+            bowl.transform.localPosition = new Vector3(0.55f, 0.08f, 0.15f);
+            bowl.transform.localScale = new Vector3(0.35f, 0.08f, 0.35f);
+            if (bowlMat != null)
+            {
+                var renderer = bowl.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                    renderer.sharedMaterial = bowlMat;
+            }
+
+            var click = bowl.AddComponent<PetFoodBowl>();
+            click.Bind(this);
+            return click;
         }
     }
 }

@@ -90,8 +90,10 @@ namespace PolyPets.EditorTools
             var tutorial = systems.AddComponent<StarterTutorial>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
-            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house, foods[0]);
+            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house);
             BuildMinigameOverlay(hud.canvas.transform, minigameHud);
+            var shop = BuildFoodShopPanel(hud.canvas.transform, economy, inventory, house);
+            hud.care.Bind(economy, inventory, minigames, house, hud.hud, shop);
             BuildTutorialPanel(hud.canvas.transform, tutorial, characters.transform, livingRoom, minigames, pets, materials);
 
             WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care, tutorial);
@@ -118,9 +120,10 @@ namespace PolyPets.EditorTools
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
                 "Starter house scene ready.\n\n" +
-                "• Tutorial: welcome, name, choose Cat/Dog/Rabbit\n" +
-                "• Cat Fishing QTE · Dog Dig+Snap · Rabbit Carrot Farm\n" +
-                "• Coins from minigames → buy food → feed\n\n" +
+                "• Tutorial: welcome, name, Cat/Dog/Rabbit\n" +
+                "• Minigames earn coins\n" +
+                "• Shop: Budget / Medium / Super per species\n" +
+                "• Click the bowl to feed (full pets wait)\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -579,8 +582,7 @@ namespace PolyPets.EditorTools
             EconomyService economy,
             FoodInventory inventory,
             MinigameRouter minigames,
-            HouseController house,
-            FoodItemDefinition defaultFood)
+            HouseController house)
         {
             var eventSystem = CreateChild(uiRoot, "EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -704,7 +706,6 @@ namespace PolyPets.EditorTools
             so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            care.Bind(economy, inventory, minigames, house, hud, defaultFood);
             care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel);
             care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn);
 
@@ -715,6 +716,40 @@ namespace PolyPets.EditorTools
             care.RefreshAll();
 
             return new HudBundle { hud = hud, care = care, canvas = canvas };
+        }
+
+        private static FoodShopPanel BuildFoodShopPanel(
+            Transform canvas,
+            EconomyService economy,
+            FoodInventory inventory,
+            HouseController house)
+        {
+            var shopGo = CreateChild(canvas.gameObject, "FoodShop");
+            var shop = shopGo.AddComponent<FoodShopPanel>();
+
+            var root = CreateUiPanel(shopGo.transform, "ShopPanel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(400f, 420f), new Color(0.08f, 0.07f, 0.06f, 0.96f));
+            root.SetActive(false);
+
+            var title = CreateUiText(root.transform, "Title", "Food Shop",
+                new Vector2(0.5f, 0.92f), new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(360f, 32f),
+                TextAnchor.MiddleCenter, 20);
+            var body = CreateUiText(root.transform, "Body", "Budget / Medium / Super",
+                new Vector2(0.5f, 0.82f), new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(360f, 50f),
+                TextAnchor.UpperCenter, 13);
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var buttonRoot = new GameObject("Rows", typeof(RectTransform));
+            buttonRoot.transform.SetParent(root.transform, false);
+            var brt = buttonRoot.GetComponent<RectTransform>();
+            brt.anchorMin = Vector2.zero;
+            brt.anchorMax = Vector2.one;
+            brt.offsetMin = Vector2.zero;
+            brt.offsetMax = Vector2.zero;
+
+            var close = CreateSimpleButton(root.transform, "Close", "Close", new Vector2(0.5f, 0.08f), new Vector2(120f, 40f));
+            shop.Bind(root, title, body, buttonRoot.transform, close, inventory, economy, house);
+            return shop;
         }
 
         private static void BuildMinigameOverlay(Transform canvas, MinigameHud hud)
@@ -810,6 +845,8 @@ namespace PolyPets.EditorTools
                 pets.rabbit,
                 materials.CatPrimary,
                 materials.CatSecondary);
+
+            root.transform.SetAsLastSibling();
         }
 
         private static void StretchFull(RectTransform rt, float pad)

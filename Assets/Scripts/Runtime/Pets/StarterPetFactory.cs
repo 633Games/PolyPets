@@ -40,6 +40,7 @@ namespace PolyPets.Pets
             }
 
             FeelTagBinder.WrapChildrenWithFeelContainer(root.transform, FeelTagType.Squash, "Idle");
+            agent.EnsureFoodBowl(secondary);
             return agent;
         }
 

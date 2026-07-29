@@ -2,36 +2,28 @@
 
 ## Loop
 
-See also [`GAME_LOOP.md`](GAME_LOOP.md).
+1. Tutorial → pick species  
+2. Minigame → coins  
+3. Shop → Budget / Medium / Super **species food**  
+4. Click **bowl** to feed  
+5. If full → wait until hunger drops  
 
-1. Tutorial: name + pick Cat / Dog / Rabbit  
-2. **Play** that pet’s minigame → **coins**  
-3. **Shop** → buy food  
-4. **Feed** → hunger + happiness up  
+## Food tiers
 
-Coins are **not** idle income.
+| Tier | Cost | Restore |
+|------|------|---------|
+| Budget | 6c | low |
+| Medium | 12c | mid |
+| Super | 22c | high |
 
-## Minigames → money
-
-| Pet | Minigame |
-|-----|----------|
-| Cat | Fishing QTE |
-| Dog | Dig garden → Snap (wrong holes fill in) |
-| Rabbit | Carrot farm collect |
+Cat / Dog / Rabbit each have their own three tiers.
 
 ## Systems
 
 | Piece | Role |
 |-------|------|
-| `StarterTutorial` | Welcome / name / species |
-| `EconomyService` | Wallet (minigame payouts only) |
-| `PetNeeds` | Hunger + happiness |
-| `FoodInventory` | Buy + stock + consume |
-| `MinigameRouter` | Routes to pet minigame |
-| `CareHudController` | Feed / Shop / Play |
-
-## Defaults
-
-- Start with **0 coins**
-- Kibble **8c**
-- Pity crumbs on failed rounds so the tutorial loop can’t softlock
+| `FoodShopPanel` | Species shop UI |
+| `PetFoodBowl` | Click to feed |
+| `PetNeeds.IsFull` | Blocks feeding when full |
+| `FoodInventory` | Buy + stock per item |
+| `MinigameRouter` | Coin income |

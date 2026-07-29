@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using PolyPets.Economy;
+using PolyPets.Pets;
 
 namespace PolyPets.Shop
 {
     /// <summary>
-    /// Buys food with minigame-earned coins and keeps a simple inventory count per food id.
+    /// Buys species food with minigame coins and tracks inventory stacks.
     /// </summary>
     public sealed class FoodInventory : MonoBehaviour
     {
@@ -27,10 +28,7 @@ namespace PolyPets.Shop
 
         public event Action InventoryChanged;
 
-        private void Awake()
-        {
-            Instance = this;
-        }
+        private void Awake() => Instance = this;
 
         private void OnDestroy()
         {
@@ -38,15 +36,11 @@ namespace PolyPets.Shop
                 Instance = null;
         }
 
-        public void SetCatalog(FoodItemDefinition[] items)
-        {
-            catalog = items;
-        }
+        public void SetCatalog(FoodItemDefinition[] items) => catalog = items;
 
         public int GetCount(FoodItemDefinition item)
         {
-            if (item == null)
-                return 0;
+            if (item == null) return 0;
             for (int i = 0; i < stacks.Count; i++)
             {
                 if (stacks[i].item == item)
@@ -54,6 +48,18 @@ namespace PolyPets.Shop
             }
 
             return 0;
+        }
+
+        public int CountForSpecies(PetSpecies species)
+        {
+            int total = 0;
+            for (int i = 0; i < stacks.Count; i++)
+            {
+                if (stacks[i].item != null && stacks[i].item.species == species)
+                    total += stacks[i].count;
+            }
+
+            return total;
         }
 
         public bool TryBuy(FoodItemDefinition item, int qty = 1)
@@ -120,25 +126,41 @@ namespace PolyPets.Shop
             return false;
         }
 
-        /// <summary>Consume the first available food, preferring highest hunger restore.</summary>
-        public bool TryConsumeBestAvailable(out FoodItemDefinition consumed)
+        /// <summary>
+        /// Best owned food for a species (highest hunger restore, Super &gt; Medium &gt; Budget).
+        /// </summary>
+        public bool TryConsumeBestForSpecies(PetSpecies species, out FoodItemDefinition consumed)
         {
             consumed = null;
             FoodItemDefinition best = null;
-            float bestRestore = -1f;
+            float bestScore = float.NegativeInfinity;
 
             for (int i = 0; i < stacks.Count; i++)
             {
-                if (stacks[i].count <= 0 || stacks[i].item == null)
+                var item = stacks[i].item;
+                if (stacks[i].count <= 0 || item == null || item.species != species)
                     continue;
-                if (stacks[i].item.hungerRestore > bestRestore)
+
+                float score = item.hungerRestore * 10f + (int)item.tier;
+                if (score > bestScore)
                 {
-                    bestRestore = stacks[i].item.hungerRestore;
-                    best = stacks[i].item;
+                    bestScore = score;
+                    best = item;
                 }
             }
 
             return best != null && TryConsume(best, out consumed);
+        }
+
+        public IEnumerable<FoodItemDefinition> CatalogForSpecies(PetSpecies species)
+        {
+            if (catalog == null)
+                yield break;
+            for (int i = 0; i < catalog.Length; i++)
+            {
+                if (catalog[i] != null && catalog[i].species == species)
+                    yield return catalog[i];
+            }
         }
     }
 }

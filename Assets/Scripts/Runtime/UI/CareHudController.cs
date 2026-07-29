@@ -9,7 +9,7 @@ using PolyPets.Shop;
 namespace PolyPets.UI
 {
     /// <summary>
-    /// Wires Feed / Shop / Minigame buttons and shows hunger, happiness, coins.
+    /// Care chrome: Shop opens species food panel; Feed nudges you to click the bowl; Play runs minigame.
     /// </summary>
     public sealed class CareHudController : MonoBehaviour
     {
@@ -18,11 +18,11 @@ namespace PolyPets.UI
         [SerializeField] private MinigameRouter minigames;
         [SerializeField] private HouseController house;
         [SerializeField] private HudController hud;
+        [SerializeField] private FoodShopPanel shopPanel;
         [SerializeField] private Text hungerText;
         [SerializeField] private Text happinessText;
         [SerializeField] private Text statusText;
         [SerializeField] private Text foodStockText;
-        [SerializeField] private FoodItemDefinition defaultShopFood;
         [SerializeField] private UiChromeButton feedButton;
         [SerializeField] private UiChromeButton shopButton;
         [SerializeField] private UiChromeButton minigameButton;
@@ -58,7 +58,6 @@ namespace PolyPets.UI
 
         private void Update()
         {
-            // Meters drift — keep labels fresh without event spam every frame.
             if (Time.frameCount % 15 == 0)
                 RefreshNeedsUi();
         }
@@ -76,47 +75,64 @@ namespace PolyPets.UI
         {
             hud?.SetCoins(coins);
             RefreshNeedsUi();
+            if (shopPanel != null && shopPanel.IsOpen)
+                shopPanel.Rebuild();
         }
 
         private void OnFeedClicked()
         {
             var pet = ActivePet;
             if (pet == null)
-                return;
-
-            if (inventory != null && inventory.TryConsumeBestAvailable(out var food))
             {
-                pet.Needs?.TryFeed(food);
+                if (statusText != null)
+                    statusText.text = "Finish the tutorial first!";
+                return;
+            }
+
+            // Prefer the bowl interaction; button is a convenience shortcut to the same logic.
+            var bowl = pet.GetComponentInChildren<PetFoodBowl>(true);
+            if (bowl != null)
+            {
+                bool ok = bowl.TryFeedFromBowl();
+                if (!ok && pet.Needs != null && pet.Needs.IsFull)
+                {
+                    if (statusText != null)
+                        statusText.text = $"{pet.PetName} is full — wait until hunger drops.";
+                }
+                else if (!ok)
+                {
+                    if (statusText != null)
+                        statusText.text = $"No {pet.Definition?.species} food — open Shop.";
+                }
+                else if (statusText != null)
+                {
+                    statusText.text = $"Fed {pet.PetName}!";
+                }
+
                 RefreshNeedsUi();
                 return;
             }
 
-            // No stock — nudge player to earn + buy.
             if (statusText != null)
-                statusText.text = "No food! Play a minigame, then buy food.";
-            Debug.Log("[PolyPets] No food in inventory. Earn coins in a minigame, then use Shop.");
+                statusText.text = "Click the bowl next to your pet to feed.";
         }
 
         private void OnShopClicked()
         {
-            if (defaultShopFood == null || inventory == null)
+            if (ActivePet == null)
             {
-                Debug.LogWarning("[PolyPets] Shop food not configured.");
+                if (statusText != null)
+                    statusText.text = "Finish the tutorial first!";
                 return;
             }
 
-            if (inventory.TryBuy(defaultShopFood))
+            if (shopPanel == null)
             {
-                if (statusText != null)
-                    statusText.text = $"Bought {defaultShopFood.displayName}!";
-                RefreshNeedsUi();
+                Debug.LogWarning("[PolyPets] Food shop panel missing.");
+                return;
             }
-            else
-            {
-                if (statusText != null)
-                    statusText.text = $"Need {defaultShopFood.priceCoins} coins — play a minigame!";
-                Debug.Log($"[PolyPets] Can't afford {defaultShopFood.displayName} ({defaultShopFood.priceCoins}c).");
-            }
+
+            shopPanel.Toggle();
         }
 
         private void OnMinigameClicked()
@@ -128,9 +144,7 @@ namespace PolyPets.UI
                 return;
             }
 
-            if (minigames == null)
-                return;
-            if (minigames.IsBusy)
+            if (minigames == null || minigames.IsBusy)
                 return;
 
             minigames.SetActivePet(ActivePet);
@@ -156,16 +170,13 @@ namespace PolyPets.UI
                 hungerText.text = needs != null ? $"Hunger {needs.Hunger:0}" : "Hunger —";
             if (happinessText != null)
                 happinessText.text = needs != null ? $"Happy {needs.Happiness:0}" : "Happy —";
-            if (statusText != null && needs != null)
+            if (statusText != null && needs != null && (shopPanel == null || !shopPanel.IsOpen))
                 statusText.text = needs.StatusLabel();
 
             if (foodStockText != null && inventory != null)
             {
-                int total = 0;
-                var stacks = inventory.Stacks;
-                for (int i = 0; i < stacks.Count; i++)
-                    total += stacks[i].count;
-                foodStockText.text = $"Food x{total}";
+                var species = pet?.Definition != null ? pet.Definition.species : PetSpecies.Cat;
+                foodStockText.text = $"{species} food x{inventory.CountForSpecies(species)}";
             }
         }
 
@@ -175,14 +186,14 @@ namespace PolyPets.UI
             MinigameRouter games,
             HouseController houseController,
             HudController hudController,
-            FoodItemDefinition shopFood)
+            FoodShopPanel shop)
         {
             economy = eco;
             inventory = inv;
             minigames = games;
             house = houseController;
             hud = hudController;
-            defaultShopFood = shopFood;
+            shopPanel = shop;
         }
 
         public void BindMeters(Text hunger, Text happiness, Text status, Text foodStock)
