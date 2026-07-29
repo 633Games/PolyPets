@@ -10,6 +10,7 @@ using UnityEngine.UI;
 using PolyPets.Camera;
 using PolyPets.Core;
 using PolyPets.Desktop;
+using PolyPets.Feel;
 using PolyPets.House;
 using PolyPets.Pets;
 using PolyPets.Rendering;
@@ -37,6 +38,7 @@ namespace PolyPets.EditorTools
         {
             EnsureFolders();
             PolyPetsUrpSetup.EnsureUrpPipelineAssets();
+            var spritePack = UiPrefabFactory.BuildUiPrefabKit(showDialog: false);
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
@@ -63,6 +65,8 @@ namespace PolyPets.EditorTools
 
             var cat = BuildBoxHeadCat(characters, catDef, materials);
             livingRoom.SetOccupant(cat);
+            // Feel hierarchy: Pet root → FEEL[Squash] (1,1,1) → meshes (idle breathe, no animator).
+            FeelTagBinder.WrapChildrenWithFeelContainer(cat.transform, FeelTagType.Squash, "Idle");
 
             var mainCamera = BuildCamera(cameras);
             var houseCam = mainCamera.gameObject.AddComponent<HouseCameraController>();
@@ -75,7 +79,7 @@ namespace PolyPets.EditorTools
             var desktop = systems.AddComponent<DesktopWindowController>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
-            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight);
+            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack);
 
             WireBootstrap(bootstrap, house, houseCam, desktop, dayNight);
             WireHouseCamera(houseCam, mainCamera);
@@ -101,9 +105,9 @@ namespace PolyPets.EditorTools
                 "PolyPets Bootstrap",
                 "Starter house scene created for Unity 6.3.\n\n" +
                 "• Cel-shaded greybox room + cat\n" +
-                "• URP post-processing (bloom / vignette / grade)\n" +
-                "• Day/night cycle driving sun, lamp, ambient\n" +
-                "• 3/4 house camera + desktop HUD clock\n\n" +
+                "• FEEL[Squash] idle breathe on the cat\n" +
+                "• URP post-processing + day/night\n" +
+                "• UI prefab kit + sprite pack generated\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -562,7 +566,7 @@ namespace PolyPets.EditorTools
             return dayNight;
         }
 
-        private static HudController BuildHud(GameObject uiRoot, string roomName, DayNightCycle dayNight)
+        private static HudController BuildHud(GameObject uiRoot, string roomName, DayNightCycle dayNight, UiSpritePack spritePack)
         {
             var eventSystem = CreateChild(uiRoot, "EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -579,28 +583,81 @@ namespace PolyPets.EditorTools
             scaler.matchWidthOrHeight = 1f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
+            var hudRoot = canvasGo.AddComponent<UiHudRoot>();
+            var hudRootSo = new SerializedObject(hudRoot);
+            hudRootSo.FindProperty("spritePack").objectReferenceValue = spritePack;
+            hudRootSo.FindProperty("buttonRoot").objectReferenceValue = canvasGo.transform;
+            hudRootSo.ApplyModifiedPropertiesWithoutUndo();
+
             var hud = canvasGo.AddComponent<HudController>();
 
-            var topBar = CreateUiPanel(canvasGo.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -36f), new Vector2(480f, 72f), new Color(0.08f, 0.07f, 0.06f, 0.85f));
+            // Prefer prefab chrome bars when the UI kit exists.
+            var topPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Bar_TopChrome.prefab");
+            var bottomPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Bar_BottomActions.prefab");
+            var wantPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Panel_WantPrompt.prefab");
 
-            var coinLabel = CreateUiText(topBar.transform, "CoinText", "12",
-                new Vector2(0f, 0.65f), new Vector2(0f, 0.65f), new Vector2(70f, 0f), new Vector2(120f, 28f),
-                TextAnchor.MiddleLeft, 22);
+            Text coinLabel = null;
+            Text roomLabel = null;
+            Text clockLabel = null;
 
-            var roomLabel = CreateUiText(topBar.transform, "RoomText", roomName,
-                new Vector2(1f, 0.65f), new Vector2(1f, 0.65f), new Vector2(-90f, 0f), new Vector2(160f, 28f),
-                TextAnchor.MiddleRight, 18);
+            if (topPrefab != null)
+            {
+                var top = (GameObject)PrefabUtility.InstantiatePrefab(topPrefab);
+                top.transform.SetParent(canvasGo.transform, false);
+                var topRt = top.GetComponent<RectTransform>();
+                topRt.anchorMin = new Vector2(0.5f, 1f);
+                topRt.anchorMax = new Vector2(0.5f, 1f);
+                topRt.pivot = new Vector2(0.5f, 1f);
+                topRt.anchoredPosition = Vector2.zero;
 
-            var clockLabel = CreateUiText(topBar.transform, "ClockText", "08:24  Day",
-                new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(220f, 24f),
-                TextAnchor.MiddleCenter, 14);
+                coinLabel = top.transform.Find("CoinText")?.GetComponent<Text>();
+                roomLabel = top.transform.Find("RoomText")?.GetComponent<Text>();
+                clockLabel = top.transform.Find("ClockText")?.GetComponent<Text>();
+                if (roomLabel != null)
+                    roomLabel.text = roomName;
+            }
+            else
+            {
+                var topBar = CreateUiPanel(canvasGo.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(0f, -36f), new Vector2(480f, 72f), new Color(0.08f, 0.07f, 0.06f, 0.85f));
+                coinLabel = CreateUiText(topBar.transform, "CoinText", "12",
+                    new Vector2(0f, 0.65f), new Vector2(0f, 0.65f), new Vector2(70f, 0f), new Vector2(120f, 28f),
+                    TextAnchor.MiddleLeft, 22);
+                roomLabel = CreateUiText(topBar.transform, "RoomText", roomName,
+                    new Vector2(1f, 0.65f), new Vector2(1f, 0.65f), new Vector2(-90f, 0f), new Vector2(160f, 28f),
+                    TextAnchor.MiddleRight, 18);
+                clockLabel = CreateUiText(topBar.transform, "ClockText", "08:24  Day",
+                    new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f), Vector2.zero, new Vector2(220f, 24f),
+                    TextAnchor.MiddleCenter, 14);
+            }
 
-            var bottom = CreateUiPanel(canvasGo.transform, "BottomHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 36f), new Vector2(420f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.7f));
-            CreateUiText(bottom.transform, "HintText", "Mochi wants to go fishing…",
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 36f),
-                TextAnchor.MiddleCenter, 16);
+            if (bottomPrefab != null)
+            {
+                var bottom = (GameObject)PrefabUtility.InstantiatePrefab(bottomPrefab);
+                bottom.transform.SetParent(canvasGo.transform, false);
+                var bottomRt = bottom.GetComponent<RectTransform>();
+                bottomRt.anchorMin = new Vector2(0.5f, 0f);
+                bottomRt.anchorMax = new Vector2(0.5f, 0f);
+                bottomRt.pivot = new Vector2(0.5f, 0f);
+                bottomRt.anchoredPosition = Vector2.zero;
+            }
+
+            if (wantPrefab != null)
+            {
+                var want = (GameObject)PrefabUtility.InstantiatePrefab(wantPrefab);
+                want.transform.SetParent(canvasGo.transform, false);
+                var wantRt = want.GetComponent<RectTransform>();
+                wantRt.anchorMin = wantRt.anchorMax = new Vector2(0.5f, 0.22f);
+                wantRt.anchoredPosition = Vector2.zero;
+            }
+            else
+            {
+                var bottom = CreateUiPanel(canvasGo.transform, "BottomHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                    new Vector2(0f, 36f), new Vector2(420f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.7f));
+                CreateUiText(bottom.transform, "HintText", "Mochi wants to go fishing…",
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 36f),
+                    TextAnchor.MiddleCenter, 16);
+            }
 
             var so = new SerializedObject(hud);
             so.FindProperty("coinText").objectReferenceValue = coinLabel;
@@ -612,6 +669,7 @@ namespace PolyPets.EditorTools
             hud.SetCoins(12);
             hud.SetRoomName(roomName);
             hud.BindDayNight(dayNight);
+            hudRoot.RefreshButtons();
             return hud;
         }
 

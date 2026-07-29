@@ -114,6 +114,8 @@ Player Settings:
 | `PolyPets/CelShade` | Toon/cel lit + outline |
 | `PolyPetsUrpSetup` | Pipeline asset ensure |
 | `PolyPetsSceneBootstrap` | One-click scene |
+| `FeelTag` / `FeelIdleSquash` | `FEEL[Squash]` idle breathe |
+| `UiSpritePack` / `UiChromeButton` | Sprite-driven UI prefabs |
 
 ---
 
@@ -123,3 +125,13 @@ Player Settings:
 - FXAA instead of MSAA
 - HDR kept **on** for bloom (cheap at 480×720)
 - Day/night updates lights each frame (fine at this scale); curves are cheap
+
+---
+
+## Feel + UI
+
+See [`docs/FEEL_AND_UI.md`](FEEL_AND_UI.md):
+
+- Name objects `FEEL[Squash]` for breathing idle without an Animator
+- Import More Mountains [Feel](https://feel-docs.moremountains.com/how-to-install.html), then **Upgrade Tags To MMF Players**
+- UI prefabs driven by `UiSpritePack_Default` (Shop, Back, Close, Home, …)
