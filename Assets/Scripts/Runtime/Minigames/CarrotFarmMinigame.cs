@@ -213,6 +213,10 @@ namespace PolyPets.Minigames
             _coins += gain;
             _plots[_px, _py] = default;
             PlantRandom(startReady: false);
+            PolyPets.Audio.JuicySfx.PlayHit();
+            PolyPets.Audio.JuicySfx.PlayCoinDing();
+            if (_streak >= 3)
+                PolyPets.Audio.JuicySfx.PlayReelTick();
         }
 
         private void RefreshHud(string banner)

@@ -21,6 +21,7 @@ namespace PolyPets.Pets
         private PetDirtVisual _dirt;
         private bool _scrubbing;
         private bool _sessionActive;
+        private float _nextScrubSfx;
 
         public bool IsScrubMode { get; private set; }
 
@@ -47,6 +48,8 @@ namespace PolyPets.Pets
             _dirt.PushShaderState();
             IsScrubMode = true;
             _sessionActive = true;
+            _nextScrubSfx = 0f;
+            PolyPets.Audio.JuicySfx.PlayPop();
             if (statusHint != null)
                 statusHint.text = "Scrub mode — click & drag on your pet to wipe dirt.";
         }
@@ -84,6 +87,11 @@ namespace PolyPets.Pets
                         uv = new Vector2(0.5f, 0.5f);
                     _dirt.PaintScrub(uv, scrubRadiusUv);
                     _target.Needs?.ApplyScrub(cleanlinessPerSecond * Time.deltaTime);
+                    if (Time.unscaledTime >= _nextScrubSfx)
+                    {
+                        PolyPets.Audio.JuicySfx.PlayScrubTick();
+                        _nextScrubSfx = Time.unscaledTime + 0.09f;
+                    }
                 }
             }
             else if (_scrubbing && Input.GetMouseButtonUp(0))
@@ -126,6 +134,9 @@ namespace PolyPets.Pets
                 _target.Needs.FinishCleaningSession(coverage);
                 _dirt.ClearScrubMask();
                 _dirt.PushShaderState();
+                PolyPets.Audio.JuicySfx.PlayClean();
+                if (coverage > 0.35f)
+                    PolyPets.Audio.JuicySfx.PlayCoinDing();
                 if (statusHint != null)
                 {
                     statusHint.text = coverage > 0.15f

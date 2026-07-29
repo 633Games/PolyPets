@@ -27,9 +27,12 @@ namespace PolyPets.UI
 
         public void SetCoins(int coins)
         {
+            bool changed = coins != _coins;
             _coins = coins;
             if (coinText != null)
-                coinText.text = $"{_coins}";
+                coinText.text = $"★ {_coins}";
+            if (changed && Application.isPlaying && coinText != null)
+                Feel.FeelTagBinder.EnsureTagOn(coinText.gameObject, Feel.FeelTagType.Punch, autoPlay: false)?.Play();
         }
 
         public void SetRoomName(string roomName)

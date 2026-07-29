@@ -127,6 +127,7 @@ namespace PolyPets.Minigames
                 }
 
                 EconomyService.Instance?.AddCoins(payout, result.MinigameId);
+                PolyPets.Audio.JuicySfx.PlayMinigameWin();
             }
 
             if (result.Completed)

@@ -20,6 +20,10 @@ On Play, `AmbientAudioPlayer` loops:
 
 Mute via the AudioSource on `=== SYSTEMS ===` / AmbientAudioPlayer.
 
+## Juicy SFX (pachislot bar)
+`JuicySfx` plays medal dings, cascades, win stingers, UI ticks on every care/earn action.  
+See [`JUICE_AND_SFX.md`](JUICE_AND_SFX.md). Re-run First-Time Setup to wire clips.
+
 ## Pet levels
 `PetProgression` on each pet:
 | Action | XP |

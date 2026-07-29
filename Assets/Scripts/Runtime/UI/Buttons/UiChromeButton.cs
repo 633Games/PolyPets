@@ -103,6 +103,7 @@ namespace PolyPets.UI
                 tag.Play();
             else
                 GetComponent<FeelPunchScale>()?.Play();
+            PolyPets.Audio.JuicySfx.PlayUiClick();
         }
     }
 }

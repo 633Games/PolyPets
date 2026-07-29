@@ -128,6 +128,7 @@ namespace PolyPets.EditorTools
             var houseClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Ambient/Amb_CozyHouse_CC0.ogg");
             var padClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/Ambient/Amb_SoftPad_Proc.ogg");
             ambient.BindClips(houseClip, padClip);
+            JuicySfxBootstrap.EnsureOn(systems);
 
             var desktop = systems.AddComponent<DesktopWindowController>();
             var tutorial = systems.AddComponent<StarterTutorial>();
@@ -169,6 +170,7 @@ namespace PolyPets.EditorTools
                 "Starter house scene ready.\n\n" +
                 "• Beautiful 4-room house (living / kitchen / bedroom / garden)\n" +
                 "• Cel shade + warm lamp + day/night grade\n" +
+                "• Slot-style juicy SFX on every payout\n" +
                 "• Clean scrub · food/décor shops · idle coins\n" +
                 "• Pet levels · ambient loop\n" +
                 "• Import Feel before setup for MMF upgrade\n\n" +

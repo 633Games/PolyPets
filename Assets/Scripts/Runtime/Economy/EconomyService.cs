@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using PolyPets.Audio;
 
 namespace PolyPets.Economy
 {
@@ -14,6 +15,7 @@ namespace PolyPets.Economy
         [SerializeField] private int coins;
         [Tooltip("Starter coins so the player can buy one cheap snack after the first minigame, not before.")]
         [SerializeField] private int startingCoins;
+        [SerializeField] private bool playSpendSfx = true;
 
         public int Coins => coins;
 
@@ -52,6 +54,12 @@ namespace PolyPets.Economy
 
             coins += amount;
             CoinsChanged?.Invoke(coins);
+
+            // Idle floor coins play their own rising ding; everything else gets a payout cascade.
+            bool idlePickup = !string.IsNullOrEmpty(source) && source.IndexOf("idle", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!idlePickup)
+                JuicySfx.PlayCoinPayout(amount);
+
             Debug.Log($"[PolyPets] +{amount} coins{(string.IsNullOrEmpty(source) ? "" : $" ({source})")}. Total: {coins}");
         }
 
@@ -60,10 +68,16 @@ namespace PolyPets.Economy
             if (amount <= 0)
                 return true;
             if (coins < amount)
+            {
+                if (playSpendSfx)
+                    JuicySfx.PlayDeny();
                 return false;
+            }
 
             coins -= amount;
             CoinsChanged?.Invoke(coins);
+            if (playSpendSfx)
+                JuicySfx.PlayPurchase();
             Debug.Log($"[PolyPets] -{amount} coins{(string.IsNullOrEmpty(sink) ? "" : $" ({sink})")}. Total: {coins}");
             return true;
         }

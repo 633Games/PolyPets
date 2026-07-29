@@ -65,6 +65,8 @@ namespace PolyPets.House
 
             HouseBuffs.Instance?.Recalculate();
             Economy.IdleCoinSpawner.Instance?.OnRoomChanged();
+            if (Application.isPlaying)
+                PolyPets.Audio.JuicySfx.PlayRoomWhoosh();
         }
 
         public void NextRoom()

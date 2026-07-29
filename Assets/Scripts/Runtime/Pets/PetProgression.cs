@@ -46,7 +46,11 @@ namespace PolyPets.Pets
 
             ProgressionChanged?.Invoke(this);
             if (leveled)
+            {
                 Feel.FeelBridge.TryPlayFeedback(gameObject, "LevelUp");
+                Audio.JuicySfx.PlayLevelUp();
+                Audio.JuicySfx.PlayCoinPayout(5);
+            }
         }
 
         public string StatusLabel() => level >= maxLevel

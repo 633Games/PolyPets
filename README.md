@@ -16,6 +16,7 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials + albedo textures in `Assets/Materials/` / `Art/Textures/`
 - **[Rooms + Clean](docs/ROOMS_AND_CLEAN.md)** — multi-room décor, dirt scrub shader, no pet death
 - **[Scene Beauty](docs/SCENE_BEAUTY.md)** — what First-Time Setup builds visually
+- **[Juice & SFX](docs/JUICE_AND_SFX.md)** — competitive bar + pachislot-style dings
 - **[Idle / Feel / Audio / Levels](docs/IDLE_FEEL_AUDIO_LEVELS.md)** — floor coins, Feel import, ambient loop, XP
 
 ## When you get home (fresh clone)

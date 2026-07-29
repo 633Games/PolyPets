@@ -120,11 +120,16 @@ namespace PolyPets.Tutorial
             if (button == null)
                 return;
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => OnChooseSpecies(species));
+            button.onClick.AddListener(() =>
+            {
+                PolyPets.Audio.JuicySfx.PlayUiClick();
+                OnChooseSpecies(species);
+            });
         }
 
         private void OnNext()
         {
+            PolyPets.Audio.JuicySfx.PlayUiClick();
             switch (step)
             {
                 case Step.Welcome:
@@ -166,6 +171,7 @@ namespace PolyPets.Tutorial
             completed = true;
             step = Step.Done;
             Hide();
+            PolyPets.Audio.JuicySfx.PlayCelebrate();
             TutorialCompleted?.Invoke(SpawnedPet);
 
             Debug.Log($"[PolyPets] Welcome, {petName} the {species}! Minigame: {def?.SignatureMinigameName}");

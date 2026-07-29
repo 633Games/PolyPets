@@ -68,6 +68,7 @@ namespace PolyPets.Pets
 
             if (needs.IsFull)
             {
+                PolyPets.Audio.JuicySfx.PlayDeny();
                 Debug.Log($"[PolyPets] {pet.PetName} is full — wait until hunger drops.");
                 return false;
             }
@@ -79,6 +80,7 @@ namespace PolyPets.Pets
             var species = pet.Definition != null ? pet.Definition.species : PetSpecies.Cat;
             if (!inventory.TryConsumeBestForSpecies(species, out var food))
             {
+                PolyPets.Audio.JuicySfx.PlayDeny();
                 Debug.Log($"[PolyPets] No {species} food in inventory. Open the shop!");
                 return false;
             }
@@ -88,11 +90,14 @@ namespace PolyPets.Pets
                 // Refund if somehow rejected after consume (shouldn't happen often).
                 if (reject == PetNeeds.FeedRejectReason.Full)
                     inventory.Add(food, 1);
+                PolyPets.Audio.JuicySfx.PlayDeny();
                 Debug.Log($"[PolyPets] {pet.PetName} won't eat right now ({reject}).");
                 return false;
             }
 
             FeelTagBinder.EnsureTagOn(gameObject, FeelTagType.Punch, autoPlay: false)?.Play();
+            PolyPets.Audio.JuicySfx.PlayFeed();
+            PolyPets.Audio.JuicySfx.PlayPop();
             RefreshVisual();
             return true;
         }

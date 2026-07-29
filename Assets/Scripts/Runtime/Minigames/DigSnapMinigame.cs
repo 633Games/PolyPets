@@ -171,6 +171,8 @@ namespace PolyPets.Minigames
                 _coins += coinsPerSnap;
                 _banner = $"SNAP! ({_snaps}/{snapsToWin}) +{coinsPerSnap}c";
                 _phase = Phase.Between;
+                PolyPets.Audio.JuicySfx.PlayHit();
+                PolyPets.Audio.JuicySfx.PlayCoinDing();
                 RefreshHud();
 
                 if (_snaps >= snapsToWin)
@@ -183,6 +185,7 @@ namespace PolyPets.Minigames
                 _coins += 1;
                 _banner = "Too slow — it ducked under. Hole fills…";
                 _phase = Phase.Filling;
+                PolyPets.Audio.JuicySfx.PlayMiss();
                 RefreshHud();
                 Invoke(nameof(AfterMissFill), missFillDelay);
             }

@@ -148,6 +148,8 @@ namespace PolyPets.Minigames
             {
                 _phase = Phase.BiteWindow;
                 _biteEndsAt = Time.time + biteWindowSeconds;
+                PolyPets.Audio.JuicySfx.PlayHit();
+                PolyPets.Audio.JuicySfx.PlayReelTick();
                 RefreshHud(
                     $"Fishing ({_round + 1}/{rounds})\n" +
                     "!!! BOBBER UNDER — BITE !!!\n" +
@@ -157,6 +159,7 @@ namespace PolyPets.Minigames
             {
                 _nibblesDone++;
                 _nextEventAt = Time.time + UnityEngine.Random.Range(nibbleGapMin, nibbleGapMax);
+                PolyPets.Audio.JuicySfx.PlayReelTick();
                 RefreshHud(
                     $"Fishing ({_round + 1}/{rounds})\n" +
                     $"~ nibble ~  ({_nibblesDone}/{maxNibbles})\n" +
@@ -263,6 +266,8 @@ namespace PolyPets.Minigames
             int gain = baseCoins + (_perfectHook ? perfectBonus : 0);
             _coins += gain;
             _phase = Phase.BetweenRounds;
+            PolyPets.Audio.JuicySfx.PlayHit();
+            PolyPets.Audio.JuicySfx.PlayCoinDing();
             RefreshHud(_perfectHook
                 ? $"Perfect hook! Caught one. +{gain}c"
                 : $"Caught! +{gain}c");
@@ -273,6 +278,7 @@ namespace PolyPets.Minigames
         {
             _coins += 1; // pity
             _phase = Phase.BetweenRounds;
+            PolyPets.Audio.JuicySfx.PlayMiss();
             RefreshHud($"{reason}\n+1c pity");
             AdvanceOrFinish();
         }

@@ -54,6 +54,8 @@ namespace PolyPets.Economy
 
             FeelTagBinder.EnsureTagOn(gameObject, FeelTagType.Punch, autoPlay: false)?.Play();
             FeelBridge.TryPlayFeedback(gameObject, "Collect");
+            PolyPets.Audio.JuicySfx.PlayCoinDing();
+            PolyPets.Audio.JuicySfx.PlayPop();
 
             _spawner?.NotifyCollected(this);
             Destroy(gameObject);
@@ -163,6 +165,7 @@ namespace PolyPets.Economy
             coin.Init(this, value, coinMaterial);
             _active.Add(coin);
             FeelBridge.TryPlayFeedback(go, "CoinSpawn");
+            PolyPets.Audio.JuicySfx.PlayCoinSpawn();
         }
 
         public void NotifyCollected(IdleFloorCoin coin)
