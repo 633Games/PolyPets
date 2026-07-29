@@ -10,10 +10,14 @@ using UnityEngine.UI;
 using PolyPets.Camera;
 using PolyPets.Core;
 using PolyPets.Desktop;
+using PolyPets.Economy;
 using PolyPets.Feel;
 using PolyPets.House;
+using PolyPets.Minigames;
+using PolyPets.Needs;
 using PolyPets.Pets;
 using PolyPets.Rendering;
+using PolyPets.Shop;
 using PolyPets.UI;
 
 namespace PolyPets.EditorTools
@@ -49,6 +53,7 @@ namespace PolyPets.EditorTools
             var materials = CreateOrLoadMaterials();
             var catDef = CreateOrLoadCatDefinition(materials.CatPrimary);
             var volumeProfile = CreateOrLoadVolumeProfile();
+            var foods = FoodCatalogFactory.EnsureDefaultFoods();
 
             var systems = CreateRoot("=== SYSTEMS ===");
             var environment = CreateRoot("=== ENVIRONMENT ===");
@@ -64,6 +69,8 @@ namespace PolyPets.EditorTools
             house.RegisterRoom(livingRoom);
 
             var cat = BuildBoxHeadCat(characters, catDef, materials);
+            if (cat.GetComponent<PetNeeds>() == null)
+                cat.gameObject.AddComponent<PetNeeds>();
             livingRoom.SetOccupant(cat);
             // Feel hierarchy: Pet root → FEEL[Squash] (1,1,1) → meshes (idle breathe, no animator).
             FeelTagBinder.WrapChildrenWithFeelContainer(cat.transform, FeelTagType.Squash, "Idle");
@@ -76,14 +83,22 @@ namespace PolyPets.EditorTools
             var volume = BuildGlobalVolume(lighting, volumeProfile);
             var dayNight = BuildDayNight(systems, lights, mainCamera, volume);
 
+            var economy = systems.AddComponent<EconomyService>();
+            var inventory = systems.AddComponent<FoodInventory>();
+            inventory.SetCatalog(foods);
+            WireFoodInventory(inventory, foods);
+            var minigames = systems.AddComponent<MinigameRouter>();
+            minigames.SetActivePet(cat);
+
             var desktop = systems.AddComponent<DesktopWindowController>();
             var bootstrap = systems.AddComponent<GameBootstrap>();
 
-            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack);
+            var hud = BuildHud(ui, livingRoom.DisplayName, dayNight, spritePack, economy, inventory, minigames, house, foods[0]);
 
-            WireBootstrap(bootstrap, house, houseCam, desktop, dayNight);
+            WireBootstrap(bootstrap, house, houseCam, desktop, dayNight, economy, inventory, minigames, hud.care);
             WireHouseCamera(houseCam, mainCamera);
             WireHouseController(house, livingRoom);
+            WireEconomy(economy, startingCoins: 0);
 
             houseCam.ApplyLens();
             houseCam.FocusRoom(livingRoom);
@@ -97,17 +112,17 @@ namespace PolyPets.EditorTools
             EditorGUIUtility.PingObject(cat.gameObject);
 
             Debug.Log(
-                "[PolyPets] Starter house scene ready (Unity 6.3 / URP cel + day-night).\n" +
+                "[PolyPets] Starter house scene ready.\n" +
                 $"Saved to {ScenePath}\n" +
-                $"Volume profile: {VolumeProfilePath}");
+                "Loop: minigame → coins → buy food → feed → happiness/hunger.");
 
             EditorUtility.DisplayDialog(
                 "PolyPets Bootstrap",
-                "Starter house scene created for Unity 6.3.\n\n" +
-                "• Cel-shaded greybox room + cat\n" +
-                "• FEEL[Squash] idle breathe on the cat\n" +
-                "• URP post-processing + day/night\n" +
-                "• UI prefab kit + sprite pack generated\n\n" +
+                "Starter house scene ready.\n\n" +
+                "• Hunger + happiness on the cat\n" +
+                "• Coins from Fishing minigame only\n" +
+                "• Shop buys food · Feed consumes food\n" +
+                "• FEEL[Squash] + cel + day/night\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
         }
@@ -566,7 +581,22 @@ namespace PolyPets.EditorTools
             return dayNight;
         }
 
-        private static HudController BuildHud(GameObject uiRoot, string roomName, DayNightCycle dayNight, UiSpritePack spritePack)
+        private struct HudBundle
+        {
+            public HudController hud;
+            public CareHudController care;
+        }
+
+        private static HudBundle BuildHud(
+            GameObject uiRoot,
+            string roomName,
+            DayNightCycle dayNight,
+            UiSpritePack spritePack,
+            EconomyService economy,
+            FoodInventory inventory,
+            MinigameRouter minigames,
+            HouseController house,
+            FoodItemDefinition defaultFood)
         {
             var eventSystem = CreateChild(uiRoot, "EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -590,8 +620,8 @@ namespace PolyPets.EditorTools
             hudRootSo.ApplyModifiedPropertiesWithoutUndo();
 
             var hud = canvasGo.AddComponent<HudController>();
+            var care = canvasGo.AddComponent<CareHudController>();
 
-            // Prefer prefab chrome bars when the UI kit exists.
             var topPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Bar_TopChrome.prefab");
             var bottomPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Bar_BottomActions.prefab");
             var wantPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/Chrome/Panel_WantPrompt.prefab");
@@ -599,6 +629,10 @@ namespace PolyPets.EditorTools
             Text coinLabel = null;
             Text roomLabel = null;
             Text clockLabel = null;
+            UiChromeButton feedBtn = null;
+            UiChromeButton shopBtn = null;
+            UiChromeButton playBtn = null;
+            UiChromeButton minigameBtn = null;
 
             if (topPrefab != null)
             {
@@ -620,7 +654,7 @@ namespace PolyPets.EditorTools
             {
                 var topBar = CreateUiPanel(canvasGo.transform, "TopBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -36f), new Vector2(480f, 72f), new Color(0.08f, 0.07f, 0.06f, 0.85f));
-                coinLabel = CreateUiText(topBar.transform, "CoinText", "12",
+                coinLabel = CreateUiText(topBar.transform, "CoinText", "0",
                     new Vector2(0f, 0.65f), new Vector2(0f, 0.65f), new Vector2(70f, 0f), new Vector2(120f, 28f),
                     TextAnchor.MiddleLeft, 22);
                 roomLabel = CreateUiText(topBar.transform, "RoomText", roomName,
@@ -631,6 +665,22 @@ namespace PolyPets.EditorTools
                     TextAnchor.MiddleCenter, 14);
             }
 
+            // Needs strip under the top bar
+            var needsBar = CreateUiPanel(canvasGo.transform, "NeedsBar", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -92f), new Vector2(460f, 44f), new Color(0.08f, 0.07f, 0.06f, 0.8f));
+            var hungerLabel = CreateUiText(needsBar.transform, "HungerText", "Hunger 70",
+                new Vector2(0.18f, 0.55f), new Vector2(0.18f, 0.55f), Vector2.zero, new Vector2(120f, 22f),
+                TextAnchor.MiddleLeft, 14);
+            var happyLabel = CreateUiText(needsBar.transform, "HappyText", "Happy 70",
+                new Vector2(0.48f, 0.55f), new Vector2(0.48f, 0.55f), Vector2.zero, new Vector2(120f, 22f),
+                TextAnchor.MiddleLeft, 14);
+            var foodLabel = CreateUiText(needsBar.transform, "FoodStockText", "Food x0",
+                new Vector2(0.78f, 0.55f), new Vector2(0.78f, 0.55f), Vector2.zero, new Vector2(100f, 22f),
+                TextAnchor.MiddleLeft, 14);
+            var statusLabel = CreateUiText(needsBar.transform, "StatusText", "Okay",
+                new Vector2(0.5f, 0.2f), new Vector2(0.5f, 0.2f), Vector2.zero, new Vector2(400f, 18f),
+                TextAnchor.MiddleCenter, 12);
+
             if (bottomPrefab != null)
             {
                 var bottom = (GameObject)PrefabUtility.InstantiatePrefab(bottomPrefab);
@@ -640,6 +690,17 @@ namespace PolyPets.EditorTools
                 bottomRt.anchorMax = new Vector2(0.5f, 0f);
                 bottomRt.pivot = new Vector2(0.5f, 0f);
                 bottomRt.anchoredPosition = Vector2.zero;
+
+                foreach (var chrome in bottom.GetComponentsInChildren<UiChromeButton>(true))
+                {
+                    switch (chrome.ButtonId)
+                    {
+                        case UiButtonId.Feed: feedBtn = chrome; break;
+                        case UiButtonId.Shop: shopBtn = chrome; break;
+                        case UiButtonId.Play: playBtn = chrome; break;
+                        case UiButtonId.Minigame: minigameBtn = chrome; break;
+                    }
+                }
             }
 
             if (wantPrefab != null)
@@ -650,14 +711,6 @@ namespace PolyPets.EditorTools
                 wantRt.anchorMin = wantRt.anchorMax = new Vector2(0.5f, 0.22f);
                 wantRt.anchoredPosition = Vector2.zero;
             }
-            else
-            {
-                var bottom = CreateUiPanel(canvasGo.transform, "BottomHint", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                    new Vector2(0f, 36f), new Vector2(420f, 40f), new Color(0.08f, 0.07f, 0.06f, 0.7f));
-                CreateUiText(bottom.transform, "HintText", "Mochi wants to go fishing…",
-                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 36f),
-                    TextAnchor.MiddleCenter, 16);
-            }
 
             var so = new SerializedObject(hud);
             so.FindProperty("coinText").objectReferenceValue = coinLabel;
@@ -666,11 +719,17 @@ namespace PolyPets.EditorTools
             so.FindProperty("dayNight").objectReferenceValue = dayNight;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            hud.SetCoins(12);
+            care.Bind(economy, inventory, minigames, house, hud, defaultFood);
+            care.BindMeters(hungerLabel, happyLabel, statusLabel, foodLabel);
+            care.BindActionButtons(feedBtn, shopBtn, minigameBtn, playBtn);
+
+            hud.SetCoins(economy != null ? economy.Coins : 0);
             hud.SetRoomName(roomName);
             hud.BindDayNight(dayNight);
             hudRoot.RefreshButtons();
-            return hud;
+            care.RefreshAll();
+
+            return new HudBundle { hud = hud, care = care };
         }
 
         private static GameObject CreateUiPanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax,
@@ -712,14 +771,44 @@ namespace PolyPets.EditorTools
             return text;
         }
 
-        private static void WireBootstrap(GameBootstrap bootstrap, HouseController house,
-            HouseCameraController houseCam, DesktopWindowController desktop, DayNightCycle dayNight)
+        private static void WireBootstrap(
+            GameBootstrap bootstrap,
+            HouseController house,
+            HouseCameraController houseCam,
+            DesktopWindowController desktop,
+            DayNightCycle dayNight,
+            EconomyService economy,
+            FoodInventory inventory,
+            MinigameRouter minigames,
+            CareHudController care)
         {
             var so = new SerializedObject(bootstrap);
             so.FindProperty("house").objectReferenceValue = house;
             so.FindProperty("houseCamera").objectReferenceValue = houseCam;
             so.FindProperty("desktopWindow").objectReferenceValue = desktop;
             so.FindProperty("dayNight").objectReferenceValue = dayNight;
+            so.FindProperty("economy").objectReferenceValue = economy;
+            so.FindProperty("foodInventory").objectReferenceValue = inventory;
+            so.FindProperty("minigameRouter").objectReferenceValue = minigames;
+            so.FindProperty("careHud").objectReferenceValue = care;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireEconomy(EconomyService economy, int startingCoins)
+        {
+            var so = new SerializedObject(economy);
+            so.FindProperty("coins").intValue = startingCoins;
+            so.FindProperty("startingCoins").intValue = startingCoins;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireFoodInventory(FoodInventory inventory, FoodItemDefinition[] foods)
+        {
+            var so = new SerializedObject(inventory);
+            var catalog = so.FindProperty("catalog");
+            catalog.arraySize = foods.Length;
+            for (int i = 0; i < foods.Length; i++)
+                catalog.GetArrayElementAtIndex(i).objectReferenceValue = foods[i];
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

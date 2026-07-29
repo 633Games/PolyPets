@@ -3,6 +3,11 @@ using PolyPets.Desktop;
 using PolyPets.House;
 using PolyPets.Camera;
 using PolyPets.Rendering;
+using PolyPets.Economy;
+using PolyPets.Shop;
+using PolyPets.Minigames;
+using PolyPets.Pets;
+using PolyPets.UI;
 
 namespace PolyPets.Core
 {
@@ -16,6 +21,10 @@ namespace PolyPets.Core
         [SerializeField] private HouseCameraController houseCamera;
         [SerializeField] private DesktopWindowController desktopWindow;
         [SerializeField] private DayNightCycle dayNight;
+        [SerializeField] private EconomyService economy;
+        [SerializeField] private FoodInventory foodInventory;
+        [SerializeField] private MinigameRouter minigameRouter;
+        [SerializeField] private CareHudController careHud;
 
         private void Awake()
         {
@@ -30,6 +39,11 @@ namespace PolyPets.Core
 
             if (dayNight != null)
                 dayNight.Apply(dayNight.TimeOfDay01);
+
+            if (minigameRouter != null && house != null && house.ActiveRoom != null)
+                minigameRouter.SetActivePet(house.ActiveRoom.Occupant);
+
+            careHud?.RefreshAll();
         }
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
-using PolyPets.House;
+using PolyPets.Needs;
+using PolyPets.Shop;
 
 namespace PolyPets.Pets
 {
@@ -10,20 +11,23 @@ namespace PolyPets.Pets
     {
         [SerializeField] private PetDefinition definition;
         [SerializeField] private string petName = "Mochi";
-        [SerializeField] private RoomRoot currentRoom;
+        [SerializeField] private House.RoomRoot currentRoom;
         [SerializeField] private Transform head;
         [SerializeField] private Transform body;
-
-        [Header("Needs (0-100)")]
-        [Range(0, 100)] [SerializeField] private float hunger = 80f;
-        [Range(0, 100)] [SerializeField] private float clean = 80f;
-        [Range(0, 100)] [SerializeField] private float fun = 80f;
+        [SerializeField] private PetNeeds needs;
 
         public PetDefinition Definition => definition;
         public string PetName => petName;
-        public RoomRoot CurrentRoom => currentRoom;
+        public House.RoomRoot CurrentRoom => currentRoom;
+        public PetNeeds Needs => needs != null ? needs : needs = GetComponent<PetNeeds>();
 
-        public float Mood => (hunger + clean + fun) / 3f;
+        private void Awake()
+        {
+            if (needs == null)
+                needs = GetComponent<PetNeeds>();
+            if (needs == null)
+                needs = gameObject.AddComponent<PetNeeds>();
+        }
 
         public void BindDefinition(PetDefinition def)
         {
@@ -32,7 +36,7 @@ namespace PolyPets.Pets
                 petName = def.displayName;
         }
 
-        public void AssignRoom(RoomRoot room)
+        public void AssignRoom(House.RoomRoot room)
         {
             currentRoom = room;
         }
@@ -41,6 +45,18 @@ namespace PolyPets.Pets
         {
             head = headRoot;
             body = bodyRoot;
+        }
+
+        public bool TryFeedFromInventory()
+        {
+            var inv = FoodInventory.Instance;
+            if (inv == null || Needs == null)
+                return false;
+
+            if (!inv.TryConsumeBestAvailable(out var food))
+                return false;
+
+            return Needs.TryFeed(food);
         }
     }
 }

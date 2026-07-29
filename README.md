@@ -9,6 +9,7 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Game Design Document](docs/GAME_DESIGN_DOCUMENT.md)** — vision, loop, pets, rooms, minigames
 - **[Unity Setup](docs/UNITY_SETUP.md)** — Unity 6.3 project, cel/post, day-night, bootstrap
 - **[Feel + UI Prefabs](docs/FEEL_AND_UI.md)** — `FEEL[Squash]` tags + sprite-pack buttons
+- **[Needs + Economy](docs/NEEDS_AND_ECONOMY.md)** — hunger, happiness, food shop, minigame coins
 
 ## Unity quick start
 

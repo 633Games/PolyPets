@@ -219,24 +219,33 @@ Buying a room is the big beat; renovating is the drip upgrade.
 
 | Currency | Earn | Spend |
 |----------|------|-------|
-| **Coins** | Idle, taps, minigames | Food, clean items, renovations, small unlocks |
-| **Stars** (soft premium / milestone) | First clear of minigames, daily, room unlock bonus | Adopt rarer pets, showcase renovations |
-| **Tokens** (optional later) | Events | Cosmetics |
+| **Coins** | **Minigames only** (e.g. Fishing) | Food, rooms, adopts, renovations |
+| **Stars** (later) | First clears / dailies | Rare pets, showcase renos |
 
-MVP can ship with **Coins only**, then add Stars when adoption variety needs a second sink.
+**No idle coin drip for MVP.** Pets still have idle personality, but cash comes from playing.
+
+### Needs
+
+| Meter | Decay | Restore |
+|-------|-------|---------|
+| **Hunger** | Over time | Eat **bought** food |
+| **Happiness** | Over time (faster when hungry) | Feeding + finishing minigames |
+
+Loop: **Play minigame → earn coins → Shop buys food → Feed pet → meters recover.**
 
 ### Sink priorities
 
-1. Next room (main gate)  
-2. Adopt fee  
-3. Renovation tiers  
-4. Consumables (food / toys)  
+1. Food (ongoing)  
+2. Next room (main gate)  
+3. Adopt fee  
+4. Renovation tiers  
 5. Cosmetics  
 
 ### Pacing targets (design intent, tune in playtests)
 
 - First minigame win: ~1–2 minutes in  
-- Second pet / first bought room: ~15–30 minutes of mixed play+idle  
+- First food purchase: right after first successful catches  
+- Second pet / first bought room: several minigame sessions  
 - 4–5 pets: several sessions across a day  
 - Avoid requiring constant babysitting; decay should be gentle
 
