@@ -13,7 +13,7 @@ A low-poly desktop Tamagotchi × idle clicker for PC: care for box-headed pets, 
 - **[Game Loop](docs/GAME_LOOP.md)** — tutorial, Cat/Dog/Rabbit minigames
 - **[Minigame Baselines](docs/MINIGAME_BASELINES.md)** — online reference patterns for each minigame
 - **[Sprite Packs](docs/SPRITE_PACKS.md)** — vendored Kenney + game-icons for v1 UI
-- **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials in `Assets/Materials/`
+- **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials + albedo textures in `Assets/Materials/` / `Art/Textures/`
 
 ## When you get home (fresh clone)
 

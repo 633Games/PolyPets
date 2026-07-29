@@ -7,50 +7,46 @@ Rebuild anytime: **`PolyPets → Materials → Rebuild Color Palette (25 mats)`*
 
 Palette asset: `Assets/ScriptableObjects/Rendering/MaterialPalette_V1.asset`
 
-Shader: `PolyPets/CelShade` (`_BaseColor` + `_ShadeColor` + outline)
+Shader: `PolyPets/CelShade` (`_BaseMap` albedo × `_BaseColor` + `_ShadeColor` + outline)
+
+**Textures:** every mat has an albedo in `Assets/Art/Textures/` (AmbientCG photo or procedural placeholder). Rebuild wires `_BaseMap`.
 
 ---
 
 ## Swatches
 
-| # | Material | Base | Shade | Use for |
-|---|----------|------|-------|---------|
-| 1 | `Mat_Floor_WornWood` | `#72523A` | `#472E24` | Floorboards |
-| 2 | `Mat_Wall_Peeling` | `#9E9480` | `#665C57` | Room walls |
-| 3 | `Mat_Trim_Dark` | `#403833` | `#1F1A1A` | Baseboards, lamp pole, dark details |
-| 4 | `Mat_Prop_Dusty` | `#66615C` | `#383333` | Crates, generic furniture |
-| 5 | `Mat_Accent_Lamp` | `#F2C773` | `#8C5933` | Lamp shade, warm glow props |
-| 6 | `Mat_Rug_Charcoal` | `#2E2A28` | `#161412` | Rug, soft dark mats |
-| 7 | `Mat_Shadow_Blob` | `#1A1716` | `#0C0A0A` | Ground blob under pets |
-| 8 | `Mat_Bowl_Ceramic` | `#D9D0C4` | `#7A7168` | Food bowl |
-| 9 | `Mat_Metal_Dull` | `#8A8E94` | `#3E4248` | Hinges, nails, dull metal |
-| 10 | `Mat_Cat_Orange` | `#DB8C47` | `#734029` | Cat body / head |
-| 11 | `Mat_Cat_Dark` | `#2E2621` | `#14100F` | Cat ears / eyes / legs |
-| 12 | `Mat_Dog_Tan` | `#B88C59` | `#66401F` | Dog body |
-| 13 | `Mat_Dog_Brown` | `#40301F` | `#1A140C` | Dog snout / ears / legs |
-| 14 | `Mat_Rabbit_Cream` | `#E6D1C7` | `#8C5966` | Rabbit body |
-| 15 | `Mat_Rabbit_Rose` | `#8C5966` | `#4D2E38` | Rabbit ears / accents |
-| 16 | `Mat_Food_Budget` | `#A68F6A` | `#5C4A33` | Cheap kibble / cans |
-| 17 | `Mat_Food_Medium` | `#D98A4A` | `#7A4020` | Mid-tier food |
-| 18 | `Mat_Food_Super` | `#E84B5A` | `#7A2030` | Fancy food |
-| 19 | `Mat_Coin_Gold` | `#E8C04A` | `#8C6A1A` | Coins, reward pops |
-| 20 | `Mat_Plant_Leaf` | `#5A8F4A` | `#2E4D24` | Leaves, sprouts |
-| 21 | `Mat_Carrot_Orange` | `#E87A2E` | `#8C3A12` | Carrots / ready harvest |
-| 22 | `Mat_Water_Pond` | `#4A7A8C` | `#243E4D` | Fishing water |
-| 23 | `Mat_Dirt_Garden` | `#5C4333` | `#2E211A` | Dig garden soil |
-| 24 | `Mat_Fish_Silver` | `#C5D0D9` | `#5A6670` | Fish catch prop |
-| 25 | `Mat_Sky_Dusk` | `#6B5A7A` | `#2E2438` | Soft dusk / night backdrop accent |
+| # | Material | Base tint | Shade | Albedo texture | Use for |
+|---|----------|-----------|-------|----------------|---------|
+| 1 | `Mat_Floor_WornWood` | photo×white | `#472E24` | `Photo/Tex_Floor_Wood` | Floorboards |
+| 2 | `Mat_Wall_Peeling` | `#E8E0D4` | `#665C57` | `Photo/Tex_Wall_Plaster` | Room walls |
+| 3 | `Mat_Trim_Dark` | `#B0A8A0` | `#1F1A1A` | `Photo/Tex_Trim_Stone` | Baseboards, poles |
+| 4 | `Mat_Prop_Dusty` | `#E0D8D0` | `#383333` | `Photo/Tex_Prop_Wood` | Crates, furniture |
+| 5 | `Mat_Accent_Lamp` | `#F2C773` | `#8C5933` | `Procedural/Tex_Lamp_Glow` | Lamp shade |
+| 6 | `Mat_Rug_Charcoal` | photo×tint | `#161412` | `Photo/Tex_Rug_Fabric` | Rug |
+| 7 | `Mat_Shadow_Blob` | `#1A1716` | `#0C0A0A` | `Procedural/Tex_Shadow` | Ground blob |
+| 8 | `Mat_Bowl_Ceramic` | `#D9D0C4` | `#7A7168` | `Procedural/Tex_Ceramic_Soft` | Food bowl |
+| 9 | `Mat_Metal_Dull` | photo×white | `#3E4248` | `Photo/Tex_Metal_Scratched` | Dull metal |
+| 10 | `Mat_Cat_Orange` | `#DB8C47` | `#734029` | `Procedural/Tex_Cat_Fur` | Cat body |
+| 11 | `Mat_Cat_Dark` | `#2E2621` | `#14100F` | `Procedural/Tex_Cat_DarkFur` | Cat details |
+| 12 | `Mat_Dog_Tan` | `#B88C59` | `#66401F` | `Procedural/Tex_Dog_Fur` | Dog body |
+| 13 | `Mat_Dog_Brown` | `#40301F` | `#1A140C` | `Procedural/Tex_Dog_DarkFur` | Dog details |
+| 14 | `Mat_Rabbit_Cream` | `#E6D1C7` | `#8C5966` | `Procedural/Tex_Rabbit_Fur` | Rabbit body |
+| 15 | `Mat_Rabbit_Rose` | `#8C5966` | `#4D2E38` | `Procedural/Tex_Rabbit_Accent` | Rabbit accents |
+| 16 | `Mat_Food_Budget` | `#A68F6A` | `#5C4A33` | `Procedural/Tex_Food_Budget` | Cheap food |
+| 17 | `Mat_Food_Medium` | `#D98A4A` | `#7A4020` | `Procedural/Tex_Food_Medium` | Mid food |
+| 18 | `Mat_Food_Super` | `#E84B5A` | `#7A2030` | `Procedural/Tex_Food_Super` | Fancy food |
+| 19 | `Mat_Coin_Gold` | `#E8C04A` | `#8C6A1A` | `Procedural/Tex_Coin_Gold` | Coins |
+| 20 | `Mat_Plant_Leaf` | `#5A8F4A` | `#2E4D24` | `Procedural/Tex_Leaf_Soft` | Leaves |
+| 21 | `Mat_Carrot_Orange` | `#E87A2E` | `#8C3A12` | `Procedural/Tex_Carrot` | Carrots |
+| 22 | `Mat_Water_Pond` | `#4A7A8C` | `#243E4D` | `Procedural/Tex_Water_Pond` | Fishing water |
+| 23 | `Mat_Dirt_Garden` | photo×white | `#2E211A` | `Photo/Tex_Dirt_Ground` | Dig soil |
+| 24 | `Mat_Fish_Silver` | `#C5D0D9` | `#5A6670` | `Procedural/Tex_Fish_Scales` | Fish prop |
+| 25 | `Mat_Sky_Dusk` | photo×white | `#2E2438` | `Procedural/Tex_Sky_Dusk` | Dusk accent |
 
 ---
 
 ## Mood
 
-Warm rundown house + box pets. Accents are **lamp gold**, **coin gold**, and species hues — not purple UI chrome, not flat cream-board layouts.
+Warm rundown house + box pets. Photo maps are **AmbientCG CC0** placeholders; pet/food maps are procedural until final art.
 
-## Code
-
-```csharp
-var palette = /* MaterialPalette_V1 */;
-palette.GetPetPair(PetSpecies.Cat, out var primary, out var secondary);
-var floor = palette.floorWornWood; // or palette.Get("Mat_Floor_WornWood")
-```
+Swap textures by replacing files under `Assets/Art/Textures/` (same names), then **Rebuild Color Palette**.
