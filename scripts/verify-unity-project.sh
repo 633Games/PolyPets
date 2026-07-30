@@ -24,9 +24,10 @@ check Assets/Shaders/PolyPetsCelShade.shader
 
 ver=$(tr -d '\r' < ProjectSettings/ProjectVersion.txt | awk -F': ' '/m_EditorVersion:/{print $2; exit}')
 echo "Pinned editor: ${ver:-unknown}"
-if [[ "$ver" != 6000.3.* ]]; then
-  echo "WARN expected Unity 6000.3.x"
-fi
+case "$ver" in
+  6000.3.*) ;;
+  *) echo "WARN expected Unity 6000.3.x" ;;
+esac
 
 if grep -Fq 'com.unity.render-pipelines.universal' Packages/manifest.json; then
   echo "OK  URP in manifest"
@@ -36,14 +37,14 @@ else
 fi
 
 if grep -Fq 'com.unity.inputsystem' Packages/manifest.json; then
-  echo "OK  Input System in manifest (First-Time Setup sets Active Input Handling → Both)"
+  echo "OK  Input System in manifest (First-Time Setup sets Active Input Handling to Both)"
 fi
 
 echo
 if [[ "$fail" -eq 0 ]]; then
-  echo "Ready for Unity Hub → Open → this folder"
+  echo "Ready for Unity Hub -> Open -> this folder"
   echo "Editor: Unity 6.3 LTS ($ver)"
-  echo "Then: PolyPets → ★ First-Time Setup (run this)  OR click Run setup on the welcome dialog"
+  echo "Then: PolyPets -> ★ First-Time Setup (run this)  OR click Run setup on the welcome dialog"
   exit 0
 fi
 echo "Project incomplete — pull latest from the setup branch"
