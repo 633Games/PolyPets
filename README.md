@@ -9,6 +9,7 @@ Care for box-headed pets, earn currency, buy rooms, and play short minigames in 
 
 ## Docs
 
+- **[Getting Started](docs/GETTING_STARTED.md)** — clone, Hub open, First-Time Setup
 - **[Startup Sanity](docs/STARTUP_SANITY.md)** — playable checklist after First-Time Setup
 - **[Studio Branding](docs/STUDIO_BRANDING.md)** — 633 Games marks & Player Settings
 - **[Game Design Document](docs/GAME_DESIGN_DOCUMENT.md)** — vision, loop, pets, rooms, minigames
@@ -18,27 +19,32 @@ Care for box-headed pets, earn currency, buy rooms, and play short minigames in 
 - **[Game Loop](docs/GAME_LOOP.md)** — tutorial, Cat/Dog/Rabbit minigames
 - **[Minigame Baselines](docs/MINIGAME_BASELINES.md)** — online reference patterns for each minigame
 - **[Sprite Packs](docs/SPRITE_PACKS.md)** — vendored Kenney + game-icons for v1 UI
-- **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials + albedo textures in `Assets/Materials/` / `Art/Textures/`
-- **[Rooms + Clean](docs/ROOMS_AND_CLEAN.md)** — multi-room décor, dirt scrub shader, no pet death
+- **[Color Palette](docs/COLOR_PALETTE.md)** — locked 25 materials + albedo textures
+- **[Rooms + Clean](docs/ROOMS_AND_CLEAN.md)** — multi-room décor, dirt scrub, no pet death
 - **[Scene Beauty](docs/SCENE_BEAUTY.md)** — what First-Time Setup builds visually
 - **[Juice & SFX](docs/JUICE_AND_SFX.md)** — competitive bar + pachislot-style dings
-- **[Idle / Feel / Audio / Levels](docs/IDLE_FEEL_AUDIO_LEVELS.md)** — floor coins, Feel import, ambient loop, XP
+- **[Idle / Feel / Audio / Levels](docs/IDLE_FEEL_AUDIO_LEVELS.md)** — floor coins, Feel, ambient, XP
 
-## When you get home (fresh clone)
-
-Full walkthrough: **[Getting Started](docs/GETTING_STARTED.md)**.
+## Setup on your Unity (do this)
 
 ```bash
 git clone https://github.com/633Games/PolyPets.git
 cd PolyPets
-git checkout cursor/minigame-baselines-da80   # until merged to main
+git fetch origin
+git checkout cursor/unity-input-setup-aad5
+git pull origin cursor/unity-input-setup-aad5
+bash scripts/verify-unity-project.sh
 ```
 
-1. Open in **Unity Hub** with **Unity 6.3 LTS**.
-2. *(Recommended)* Import **Feel** from the Asset Store / Package Manager first.
-3. Wait for packages + compile.
-4. Menu: **`PolyPets → ★ First-Time Setup (run this)`**
+1. **Unity Hub → Open** → select this repo root (`Assets/` + `Packages/`).
+2. Editor: **Unity 6.3 LTS** (`6000.3.6f1` or any 6000.3.x).
+3. Wait for package resolve + script compile.
+4. Welcome dialog → **Run setup**, or menu **`PolyPets → ★ First-Time Setup (run this)`**.
 5. Optional: **`PolyPets → ★ Startup Sanity Check`**
-6. Press **Play** at **480×720**.
+6. Game view **480×720** → **Play**.
+
+Input Handling is set to **Both** automatically on editor load (fixes the Input System prompt).
+
+*(Optional)* Import **Feel** from the Asset Store before First-Time Setup for MMF wiring.
 
 © 633 Games

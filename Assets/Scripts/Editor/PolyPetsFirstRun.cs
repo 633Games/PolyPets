@@ -18,6 +18,7 @@ namespace PolyPets.EditorTools
         [MenuItem("PolyPets/★ First-Time Setup (run this)", priority = -100)]
         public static void FirstTimeSetup()
         {
+            EnsureInputHandlingBoth();
             StudioBrandingSetup.ApplyPlayerBranding();
 
             // Prefer importing More Mountains Feel BEFORE this step so upgrade can run.
@@ -60,39 +61,70 @@ namespace PolyPets.EditorTools
                 "Let's play");
         }
 
+        /// <summary>
+        /// Batchmode entry: Unity -batchmode -projectPath . -executeMethod PolyPets.EditorTools.PolyPetsFirstRun.FirstTimeSetupBatch -quit
+        /// </summary>
+        public static void FirstTimeSetupBatch()
+        {
+            EnsureInputHandlingBoth();
+            StudioBrandingSetup.ApplyPlayerBranding();
+            PolyPetsSceneBootstrap.BootstrapStarterHouseScene();
+            VendorSpritePackApplier.ApplyVendorSprites(showDialog: false);
+            MaterialPaletteFactory.EnsurePalette(showDialog: false);
+            EditorPrefs.SetBool(PrefKey, true);
+            Debug.Log("[PolyPets] FirstTimeSetupBatch finished.");
+        }
+
         [InitializeOnLoadMethod]
+        private static void OnEditorLoad()
+        {
+            // Fix Input System prompt as soon as scripts compile — before First-Time Setup.
+            EditorApplication.delayCall += EnsureInputHandlingBoth;
+            EditorApplication.delayCall += NudgeIfNeeded;
+        }
+
+        private static void EnsureInputHandlingBoth()
+        {
+            // 0 = Input Manager, 1 = Input System Package, 2 = Both
+            try
+            {
+                PlayerSettings.SetPropertyInt("activeInputHandler", 2);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[PolyPets] Could not set Active Input Handling to Both: {ex.Message}");
+            }
+        }
+
         private static void NudgeIfNeeded()
         {
-            EditorApplication.delayCall += () =>
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+            if (EditorPrefs.GetBool(PrefKey, false))
+                return;
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
             {
-                if (EditorApplication.isPlayingOrWillChangePlaymode)
-                    return;
-                if (EditorPrefs.GetBool(PrefKey, false))
-                    return;
-                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
-                {
-                    EditorPrefs.SetBool(PrefKey, true);
-                    return;
-                }
+                EditorPrefs.SetBool(PrefKey, true);
+                return;
+            }
 
-                bool run = EditorUtility.DisplayDialog(
-                    $"{StudioBrand.StudioName} · {StudioBrand.ProductName}",
-                    "Fresh project detected — no starter house scene yet.\n\n" +
-                    "Recommended first: import More Mountains Feel (Asset Store).\n\n" +
-                    "Then OK to run First-Time Setup:\n" +
-                    "• URP + dressed house (4 rooms)\n" +
-                    "• Minigames, shops, clean, idle coins, juicy SFX\n" +
-                    "• 633 Games player branding\n" +
-                    "• Feel upgrade if the pack is present\n\n" +
-                    "Or: PolyPets → ★ First-Time Setup",
-                    "Run setup",
-                    "Later");
+            bool run = EditorUtility.DisplayDialog(
+                $"{StudioBrand.StudioName} · {StudioBrand.ProductName}",
+                "Fresh project detected — no starter house scene yet.\n\n" +
+                "Recommended first: import More Mountains Feel (Asset Store).\n\n" +
+                "Then OK to run First-Time Setup:\n" +
+                "• URP + dressed house (4 rooms)\n" +
+                "• Minigames, shops, clean, idle coins, juicy SFX\n" +
+                "• 633 Games player branding\n" +
+                "• Feel upgrade if the pack is present\n\n" +
+                "Or: PolyPets → ★ First-Time Setup",
+                "Run setup",
+                "Later");
 
-                if (run)
-                    FirstTimeSetup();
-                else
-                    EditorPrefs.SetBool(PrefKey, true);
-            };
+            if (run)
+                FirstTimeSetup();
+            else
+                EditorPrefs.SetBool(PrefKey, true);
         }
     }
 }

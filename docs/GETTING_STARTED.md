@@ -3,19 +3,24 @@
 ## What you need
 
 1. **Unity Hub** + **Unity 6.3 LTS** (`6000.3.6f1` or any 6000.3.x)
-2. This repo (see branch note below)
+2. This repo on the setup branch below
 
 ## Clone & open
 
 ```bash
 git clone https://github.com/633Games/PolyPets.git
 cd PolyPets
-git checkout cursor/minigame-baselines-da80   # until PRs land on main
+git fetch origin
+git checkout cursor/unity-input-setup-aad5
+git pull origin cursor/unity-input-setup-aad5
+bash scripts/verify-unity-project.sh
 ```
 
 Open the folder in **Unity Hub → Open →** select the repo root (the folder with `Assets/` + `Packages/`).
 
 Wait for package resolve + script compile (first open can take a few minutes).
+
+On load, PolyPets sets **Active Input Handling → Both** so the Input System package does not block UI.
 
 ## Before First-Time Setup (recommended)
 
@@ -27,18 +32,20 @@ If you skip Feel, built-in idle squash still works; upgrade later via **PolyPets
 
 ## One script sets up the environment
 
-After compile finishes:
+After compile finishes, either:
 
-**Menu → `PolyPets` → `★ First-Time Setup (run this)`**
+- Click **Run setup** on the welcome dialog, or  
+- **Menu → `PolyPets` → `★ First-Time Setup (run this)`**
 
 That single menu:
 
-1. Ensures **URP** pipeline assets  
-2. Builds the locked **25 materials** in `Assets/Materials/`  
-3. Builds UI sprite pack + volume profile + vendor icons  
-4. Creates the house scene (4 dressed rooms, shops, clean, idle coins, ambient, levels)  
-5. Upgrades Feel tags if the Asset Store pack is imported  
-6. Opens the scene  
+1. Sets Input Handling to **Both** + 633 Games player branding  
+2. Ensures **URP** pipeline assets  
+3. Builds the locked **25 materials** in `Assets/Materials/`  
+4. Builds UI sprite pack + volume profile + vendor icons  
+5. Creates the house scene (4 dressed rooms, shops, clean, idle coins, ambient, levels)  
+6. Upgrades Feel tags if the Asset Store pack is imported  
+7. Opens the scene  
 
 ## Play
 
@@ -54,6 +61,7 @@ More: [`IDLE_FEEL_AUDIO_LEVELS.md`](IDLE_FEEL_AUDIO_LEVELS.md) · [`ROOMS_AND_CL
 | Symptom | Fix |
 |---------|-----|
 | No `PolyPets` menu | Wait for compile / check Console for errors |
+| Input System / Active Input Handling dialog | Reopen project (auto-sets **Both**) or Edit → Project Settings → Player → **Both** |
 | Pink materials | `PolyPets → Ensure URP Pipeline Assets`, then re-run First-Time Setup |
 | Empty scene | Run `★ First-Time Setup` again |
 | Want the scene file only | `PolyPets → Select Starter Scene` |
