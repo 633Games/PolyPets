@@ -10,6 +10,7 @@ Care for box-headed pets, earn currency, buy rooms, and play short minigames in 
 ## Docs
 
 - **[Getting Started](docs/GETTING_STARTED.md)** — clone, Hub open, First-Time Setup
+- **[Unity Interact skill](.cursor/skills/unity-interact/SKILL.md)** — agent play/stop/refresh/logs (minimal tokens)
 - **[Startup Sanity](docs/STARTUP_SANITY.md)** — playable checklist after First-Time Setup
 - **[Studio Branding](docs/STUDIO_BRANDING.md)** — 633 Games marks & Player Settings
 - **[Game Design Document](docs/GAME_DESIGN_DOCUMENT.md)** — vision, loop, pets, rooms, minigames
