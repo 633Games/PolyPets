@@ -22,12 +22,21 @@ Full walkthrough: **[Getting Started](docs/GETTING_STARTED.md)**.
 ```bash
 git clone https://github.com/633Games/PolyPets.git
 cd PolyPets
-git checkout cursor/minigame-baselines-da80   # until merged to main
+git pull origin main
 ```
 
-1. Open the repo in **Unity Hub** with **Unity 6.3 LTS**.
-2. Wait for packages + compile.
-3. Menu: **`PolyPets → ★ First-Time Setup (run this)`** — one script builds the whole greybox house scene.
-4. Press **Play** at **480×720**.
+For the fullest playable slice (fonts, juice, dressed rooms) until that lands on `main`:
+
+```bash
+git fetch origin
+git checkout cursor/minigame-baselines-da80
+git pull origin cursor/minigame-baselines-da80
+```
+
+1. **Unity Hub → Open** → select the repo root (folder with `Assets/` + `Packages/`).
+2. Editor: **Unity 6.3 LTS** (`6000.3.6f1` or any 6000.3.x).
+3. Wait for packages + compile.
+4. Menu: **`PolyPets → ★ First-Time Setup (run this)`** — builds the house scene + sets Input Handling to **Both**.
+5. Press **Play** at **480×720**.
 
 *(Optional later)* Import **Feel** from the Asset Store; drop icons into `UiSpritePack_Default`.
