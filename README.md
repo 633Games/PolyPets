@@ -46,6 +46,15 @@ bash scripts/verify-unity-project.sh
 
 Input Handling is set to **Both** automatically on editor load (fixes the Input System prompt).
 
+### Agent / CLI control (after Unity is open)
+
+```bash
+bash scripts/unity-interact.sh status
+bash scripts/unity-interact.sh play    # or stop / refresh / errors
+```
+
+Cursor skill: `.cursor/skills/unity-interact` (invoke with `/unity-interact`).
+
 *(Optional)* Import **Feel** from the Asset Store before First-Time Setup for MMF wiring.
 
 © 633 Games
