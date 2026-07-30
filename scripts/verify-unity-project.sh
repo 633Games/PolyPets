@@ -28,14 +28,14 @@ if [[ "$ver" != 6000.3.* ]]; then
   echo "WARN expected Unity 6000.3.x"
 fi
 
-if rg -q 'com.unity.render-pipelines.universal' Packages/manifest.json; then
+if grep -Fq 'com.unity.render-pipelines.universal' Packages/manifest.json; then
   echo "OK  URP in manifest"
 else
   echo "MISS URP package"
   fail=1
 fi
 
-if rg -q 'com.unity.inputsystem' Packages/manifest.json; then
+if grep -Fq 'com.unity.inputsystem' Packages/manifest.json; then
   echo "OK  Input System in manifest (First-Time Setup sets Active Input Handling → Both)"
 fi
 
