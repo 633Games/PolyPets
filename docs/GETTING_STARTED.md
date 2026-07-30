@@ -10,10 +10,18 @@
 ```bash
 git clone https://github.com/633Games/PolyPets.git
 cd PolyPets
-git checkout cursor/minigame-baselines-da80   # until PRs land on main
+git pull origin main
 ```
 
-Open the folder in **Unity Hub → Open →** select the repo root (the folder with `Assets/` + `Packages/`).
+**Fullest slice** (fonts, juice, dressed rooms) — until that PR lands on `main`:
+
+```bash
+git fetch origin
+git checkout cursor/minigame-baselines-da80
+git pull origin cursor/minigame-baselines-da80
+```
+
+Open the folder in **Unity Hub → Open →** select the repo root (the folder with `Assets/` + `Packages/`). Use **Unity 6.3 LTS** (`6000.3.x`).
 
 Wait for package resolve + script compile (first open can take a few minutes).
 
@@ -46,6 +54,7 @@ On a fresh clone, Unity may also pop a **Welcome to PolyPets** dialog offering t
 | Symptom | Fix |
 |---------|-----|
 | No `PolyPets` menu | Wait for compile / check Console for errors |
+| Input System / Active Input Handling dialog | Run `★ First-Time Setup` (sets **Both**) or Edit → Project Settings → Player → Active Input Handling → **Both** |
 | Pink materials | `PolyPets → Ensure URP Pipeline Assets`, then re-run First-Time Setup |
 | Empty scene | Run `★ First-Time Setup` again |
 | Want the scene file only | `PolyPets → Select Starter Scene` |

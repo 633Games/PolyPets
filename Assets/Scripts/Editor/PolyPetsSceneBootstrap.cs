@@ -42,6 +42,8 @@ namespace PolyPets.EditorTools
         public static void BootstrapStarterHouseScene()
         {
             EnsureFolders();
+            // Input System is in Packages/manifest.json — without "Both", Unity prompts / breaks UI.
+            TrySetInputHandlingBoth();
             PolyPetsUrpSetup.EnsureUrpPipelineAssets();
             var palette = MaterialPaletteFactory.EnsurePalette(showDialog: false);
             var spritePack = UiPrefabFactory.BuildUiPrefabKit(showDialog: false);
@@ -128,6 +130,19 @@ namespace PolyPets.EditorTools
                 "• Click the bowl to feed (full pets wait)\n\n" +
                 $"Scene: {ScenePath}",
                 "Nice");
+        }
+
+        private static void TrySetInputHandlingBoth()
+        {
+            // 0 = Input Manager, 1 = Input System Package, 2 = Both
+            try
+            {
+                PlayerSettings.SetPropertyInt("activeInputHandler", 2);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[PolyPets] Could not set Active Input Handling to Both: {ex.Message}");
+            }
         }
 
         [MenuItem(RootMenu + "Select Starter Scene", priority = 1)]
